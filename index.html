@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Initiative Tracker</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>D&D Initiative Tracker</h1>
+            <div class="header-actions">
+                <button id="new-encounter-btn" class="btn btn-primary">New Encounter</button>
+                <button id="save-encounter-btn" class="btn btn-secondary">Save Encounter</button>
+                <button id="load-encounter-btn" class="btn btn-secondary">Load Encounter</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="sidebar">
+                <!-- Tab Navigation -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="characters">Characters</button>
+                    <button class="tab-btn" data-tab="encounter">Encounter</button>
+                </div>
+
+                <!-- Characters Tab -->
+                <div id="characters-tab" class="tab-content active">
+                    <!-- Character Type Tabs -->
+                    <div class="character-type-tabs">
+                        <button class="character-type-btn active" data-type="player">Players</button>
+                        <button class="character-type-btn" data-type="monster">Monsters</button>
+                        <button class="character-type-btn" data-type="npc">NPCs</button>
+                    </div>
+
+                    <!-- Character Management -->
+                    <div class="character-management">
+                        <button id="add-character-btn" class="btn btn-primary">Add New Character</button>
+                        <div id="character-list" class="character-list"></div>
+                    </div>
+                </div>
+
+                <!-- Encounter Tab -->
+                <div id="encounter-tab" class="tab-content">
+                    <section class="encounter-players">
+                        <h2>Encounter Participants</h2>
+                        <div class="encounter-actions">
+                            <button id="load-players-btn" class="btn btn-primary">Load All Players</button>
+                            <button id="add-from-library-btn" class="btn btn-secondary">Add from Library</button>
+                        </div>
+                        <div id="encounter-participant-list" class="encounter-participant-list"></div>
+                    </section>
+
+                    <section class="encounter-controls">
+                        <h2>Encounter Controls</h2>
+                        <div class="control-buttons">
+                            <button id="manual-initiative-btn" class="btn btn-primary">Set Initiative</button>
+                            <button id="start-encounter-btn" class="btn btn-success" disabled>Start Encounter</button>
+                            <button id="end-encounter-btn" class="btn btn-danger" disabled>End Encounter</button>
+                            <button id="reset-encounter-btn" class="btn btn-warning">Reset Encounter</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <section class="initiative-tracker">
+                    <h2>Initiative Order</h2>
+                    <div class="initiative-controls">
+                        <button id="prev-turn-btn" class="btn btn-secondary" disabled>Previous Turn</button>
+                        <span id="current-turn-info" class="turn-info">Not started</span>
+                        <button id="next-turn-btn" class="btn btn-secondary" disabled>Next Turn</button>
+                    </div>
+                    <div id="initiative-list" class="initiative-list"></div>
+                </section>
+
+                <section class="action-tracker">
+                    <h2>Actions & Conditions</h2>
+                    <div id="action-controls" class="action-controls">
+                        <div class="action-buttons">
+                            <button id="add-condition-btn" class="btn btn-warning">Add Condition</button>
+                            <button id="deal-damage-btn" class="btn btn-danger">Deal Damage</button>
+                            <button id="heal-btn" class="btn btn-success">Heal</button>
+                        </div>
+                        <div id="active-conditions" class="conditions-list"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Character Creation Modal -->
+        <div id="character-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Add New Character</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <form id="character-form" class="character-form">
+                    <div class="form-columns">
+                        <div class="form-column">
+                            <div class="form-group">
+                                <label for="char-name">Name:</label>
+                                <input type="text" id="char-name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="char-class">Class:</label>
+                                <input type="text" id="char-class" name="class" placeholder="e.g., Fighter, Wizard">
+                            </div>
+                            <div class="form-group">
+                                <label for="char-race">Race:</label>
+                                <input type="text" id="char-race" name="race" placeholder="e.g., Human, Elf">
+                            </div>
+                            <div class="form-group">
+                                <label for="char-level">Level:</label>
+                                <input type="number" id="char-level" name="level" min="1" max="20" value="1">
+                            </div>
+                        </div>
+                        <div class="form-column">
+                            <div class="form-group">
+                                <label for="char-hp">Hit Points:</label>
+                                <input type="number" id="char-hp" name="hp" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="char-ac">Armor Class:</label>
+                                <input type="number" id="char-ac" name="ac" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="char-speed">Speed:</label>
+                                <input type="number" id="char-speed" name="speed" value="30">
+                            </div>
+                            <div class="form-group">
+                                <label for="char-proficiency">Proficiency Bonus:</label>
+                                <input type="number" id="char-proficiency" name="proficiencyBonus" value="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-section">
+                        <h3>Ability Scores</h3>
+                        <div class="ability-scores">
+                            <div class="ability-score">
+                                <label for="char-str">STR:</label>
+                                <input type="number" id="char-str" name="strength" min="1" max="20" value="10">
+                            </div>
+                            <div class="ability-score">
+                                <label for="char-dex">DEX:</label>
+                                <input type="number" id="char-dex" name="dexterity" min="1" max="20" value="10">
+                            </div>
+                            <div class="ability-score">
+                                <label for="char-con">CON:</label>
+                                <input type="number" id="char-con" name="constitution" min="1" max="20" value="10">
+                            </div>
+                            <div class="ability-score">
+                                <label for="char-int">INT:</label>
+                                <input type="number" id="char-int" name="intelligence" min="1" max="20" value="10">
+                            </div>
+                            <div class="ability-score">
+                                <label for="char-wis">WIS:</label>
+                                <input type="number" id="char-wis" name="wisdom" min="1" max="20" value="10">
+                            </div>
+                            <div class="ability-score">
+                                <label for="char-cha">CHA:</label>
+                                <input type="number" id="char-cha" name="charisma" min="1" max="20" value="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-columns">
+                        <div class="form-column">
+                            <div class="form-group">
+                                <label for="char-attacks">Attacks/Spells:</label>
+                                <textarea id="char-attacks" name="attacks" placeholder="e.g., Longsword: +5 to hit, 1d8+3 slashing"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-column">
+                            <div class="form-group">
+                                <label for="char-notes">Notes:</label>
+                                <textarea id="char-notes" name="notes" placeholder="Special abilities, resistances, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save Character</button>
+                        <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Library Selection Modal -->
+        <div id="library-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add from Character Library</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="library-tabs">
+                    <button class="library-tab-btn active" data-type="player">Players</button>
+                    <button class="library-tab-btn" data-type="monster">Monsters</button>
+                    <button class="library-tab-btn" data-type="npc">NPCs</button>
+                </div>
+                <div id="library-character-list" class="library-character-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/classes/Character.js"></script>
+    <script src="js/classes/CharacterLibrary.js"></script>
+    <script src="js/classes/Player.js"></script>
+    <script src="js/classes/Initiative.js"></script>
+    <script src="js/classes/Encounter.js"></script>
+    <script src="js/classes/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
