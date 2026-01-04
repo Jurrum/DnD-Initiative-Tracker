@@ -70,11 +70,7 @@ class UIManager {
 
         // Encounter Controls
         document.getElementById('manual-initiative-btn').addEventListener('click', () => {
-            this.showInitiativeInputs();
-        });
-
-        document.getElementById('start-encounter-btn').addEventListener('click', () => {
-            this.startEncounter();
+            this.startCombat();
         });
 
         document.getElementById('end-encounter-btn').addEventListener('click', () => {
@@ -154,9 +150,9 @@ class UIManager {
             }
         });
 
-        // Event delegation for encounter participants initiative input
+        // Event delegation for encounter participants initiative select
         document.getElementById('encounter-participant-list').addEventListener('change', (e) => {
-            if (e.target.classList.contains('initiative-input')) {
+            if (e.target.classList.contains('initiative-select')) {
                 const id = e.target.dataset.id;
                 this.setParticipantInitiative(id, e.target.value);
             }
@@ -231,7 +227,10 @@ class UIManager {
     setupGameEventHandlers() {
         this.game.on('encounterStarted', () => this.updateEncounterControls());
         this.game.on('encounterEnded', () => this.updateEncounterControls());
-        this.game.on('turnChanged', () => this.updateInitiativeList());
+        this.game.on('turnChanged', () => {
+            this.updateInitiativeList();
+            this.updateEncounterControls();
+        });
         this.game.on('playerInitiativeSet', () => this.updateEncounterParticipants());
         this.game.on('damageDealt', () => this.updateInitiativeList());
         this.game.on('playerHealed', () => this.updateInitiativeList());
@@ -442,14 +441,21 @@ class UIManager {
     }
 
     addCharacterToEncounter(character) {
-        const encounterCharacter = character.clone();
+        // Check if already in encounter
+        const currentParticipants = this.game.getCurrentEncounter().getAllPlayers();
+        const alreadyExists = currentParticipants.some(p => p.name === character.name);
+
+        if (alreadyExists) {
+            this.showNotification(`${character.name} is already in the encounter`, 'warning');
+            return;
+        }
 
         const result = this.game.addPlayer(
-            encounterCharacter.name,
-            encounterCharacter.maxHp,
-            encounterCharacter.ac,
-            encounterCharacter.initiativeModifier,
-            encounterCharacter.type
+            character.name,
+            character.maxHp,
+            character.ac,
+            character.initiativeModifier,
+            character.type
         );
 
         if (result.success) {
@@ -462,9 +468,17 @@ class UIManager {
     // Encounter Management
     loadAllPlayers() {
         const players = this.characterLibrary.getPlayers();
+        const currentParticipants = this.game.getCurrentEncounter().getAllPlayers();
+        const existingNames = new Set(currentParticipants.map(p => p.name));
+
         let addedCount = 0;
 
         players.forEach(character => {
+            // Skip if already in encounter
+            if (existingNames.has(character.name)) {
+                return;
+            }
+
             const result = this.game.addPlayer(
                 character.name,
                 character.maxHp,
@@ -478,36 +492,39 @@ class UIManager {
         });
 
         this.updateEncounterParticipants();
-        this.showNotification(`${addedCount} players loaded into encounter`, 'success');
+        if (addedCount > 0) {
+            this.showNotification(`${addedCount} players loaded into encounter`, 'success');
+        } else {
+            this.showNotification('All players already in encounter', 'info');
+        }
     }
 
-    showInitiativeInputs() {
+    startCombat() {
         const participants = this.game.getCurrentEncounter().getAllPlayers();
         if (participants.length === 0) {
-            this.showNotification('No participants in encounter', 'error');
+            this.showNotification('Add participants first', 'error');
             return;
         }
 
-        participants.forEach(player => {
-            player.initiative = 0;
-        });
+        // Check if all participants have initiative set
+        const allSet = participants.every(p => p.initiative > 0);
+        if (!allSet) {
+            this.showNotification('Enter initiative for all participants first', 'warning');
+            return;
+        }
 
-        this.updateEncounterParticipants();
-        this.showNotification('Set initiative for each participant', 'info');
+        // Start the encounter
+        const result = this.game.startEncounter();
+        if (result.success) {
+            this.updateUI();
+            this.showNotification('Combat started!', 'success');
+        }
     }
 
     setParticipantInitiative(playerId, initiative) {
         const result = this.game.setPlayerInitiative(playerId, parseInt(initiative));
         if (result.success) {
             this.updateEncounterParticipants();
-
-            const participants = this.game.getCurrentEncounter().getAllPlayers();
-            const allSet = participants.every(p => p.initiative > 0);
-
-            if (allSet) {
-                document.getElementById('start-encounter-btn').disabled = false;
-                this.showNotification('All initiatives set! Ready to start encounter.', 'success');
-            }
         }
     }
 
@@ -1101,20 +1118,28 @@ class UIManager {
         }));
         info.appendChild(DOMHelpers.createElement('div', {
             className: 'participant-details',
-            text: `HP: ${participant.currentHp}/${participant.maxHp} | AC: ${participant.ac} | Type: ${participant.type}`
+            text: `HP: ${participant.currentHp}/${participant.maxHp} | AC: ${participant.ac}`
         }));
 
         const actions = DOMHelpers.createElement('div', { className: 'participant-actions' });
 
-        const initInput = DOMHelpers.createInput('number', {
-            className: 'initiative-input',
-            value: participant.initiative,
-            placeholder: 'Init'
-        });
-        initInput.dataset.id = participant.id;
+        // Create initiative dropdown with options 1-30
+        const initOptions = [{ value: '0', text: 'Init', selected: participant.initiative === 0 }];
+        for (let i = 1; i <= 30; i++) {
+            initOptions.push({
+                value: String(i),
+                text: String(i),
+                selected: participant.initiative === i
+            });
+        }
 
-        actions.appendChild(initInput);
-        actions.appendChild(DOMHelpers.createButton('Remove', 'btn btn-danger btn-sm', null, {
+        const initSelect = DOMHelpers.createSelect(initOptions, {
+            className: 'initiative-select'
+        });
+        initSelect.dataset.id = participant.id;
+
+        actions.appendChild(initSelect);
+        actions.appendChild(DOMHelpers.createButton('X', 'btn btn-danger btn-sm', null, {
             action: 'remove',
             id: participant.id
         }));
@@ -1127,15 +1152,11 @@ class UIManager {
 
     updateEncounterControls() {
         const encounter = this.game.getCurrentEncounter();
-        const startBtn = document.getElementById('start-encounter-btn');
         const endBtn = document.getElementById('end-encounter-btn');
         const nextBtn = document.getElementById('next-turn-btn');
         const prevBtn = document.getElementById('prev-turn-btn');
         const currentTurnInfo = document.getElementById('current-turn-info');
 
-        const hasInitiatives = encounter.getAllPlayers().some(p => p.initiative > 0);
-
-        startBtn.disabled = !hasInitiatives || encounter.isActive;
         endBtn.disabled = !encounter.isActive;
         nextBtn.disabled = !encounter.isActive;
         prevBtn.disabled = !encounter.isActive;
@@ -1177,8 +1198,8 @@ class UIManager {
 
     createInitiativeItem(participant, currentPlayer) {
         const isCurrent = currentPlayer && currentPlayer.id === participant.id;
-        const item = DOMHelpers.createElement('div', {
-            className: `initiative-item ${isCurrent ? 'current-turn' : ''}`
+        const item = DOMHelpers.createElement('li', {
+            className: `initiative-item ${participant.type} ${isCurrent ? 'current-turn' : ''}`
         });
 
         // Header with name and actions
@@ -1219,23 +1240,6 @@ class UIManager {
             stats.appendChild(statDiv);
         });
         item.appendChild(stats);
-
-        // HP Bar
-        const hpPercentage = participant.getHpPercentage();
-        const hpBar = DOMHelpers.createElement('div', {
-            className: 'hp-bar',
-            data: { id: participant.id },
-            attrs: { title: 'Click for more actions' }
-        });
-        const hpFill = DOMHelpers.createElement('div', {
-            className: 'hp-fill',
-            style: {
-                width: `${hpPercentage}%`,
-                backgroundColor: participant.getStatusColor()
-            }
-        });
-        hpBar.appendChild(hpFill);
-        item.appendChild(hpBar);
 
         // Conditions
         if (participant.conditions.length > 0) {

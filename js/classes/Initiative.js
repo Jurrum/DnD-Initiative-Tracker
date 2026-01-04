@@ -171,6 +171,8 @@ class Initiative {
         if (this.players.length === 0) {
             return false;
         }
+        // Sort by initiative (highest first) before starting
+        this.sortByInitiative();
         this.isActive = true;
         this.currentTurn = 0;
         this.round = 1;

@@ -233,6 +233,10 @@ describe('Initiative', () => {
 
   describe('Move Player', () => {
     beforeEach(() => {
+      // Set specific initiatives so order after sorting is known: player1, player2, player3
+      player1.initiative = 20;
+      player2.initiative = 15;
+      player3.initiative = 10;
       initiative.addPlayer(player1);
       initiative.addPlayer(player2);
       initiative.addPlayer(player3);
@@ -240,7 +244,8 @@ describe('Initiative', () => {
     });
 
     test('movePlayer should reorder players', () => {
-      // Move player1 from index 0 to index 2
+      // After sorting: player1 (20), player2 (15), player3 (10)
+      // Move player at index 0 to index 2
       initiative.movePlayer(0, 2);
       expect(initiative.players[2]).toBe(player1);
     });
