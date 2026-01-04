@@ -1,19 +1,23 @@
-class Character {
+/**
+ * Character - Full D&D character with complete stats and abilities
+ * Extends BaseCharacter with ability scores, proficiencies, and detailed tracking
+ */
+class Character extends BaseCharacter {
     constructor(name, type = 'player') {
-        this.id = this.generateId();
-        this.name = name;
-        this.type = type; // 'player', 'monster', 'npc'
+        super(name, type);
+
+        // Generate character-specific ID
+        this.id = this.generateId('char');
+
+        // Character details
         this.class = '';
         this.race = '';
         this.level = 1;
-        
-        // Core Stats
-        this.maxHp = 10;
-        this.currentHp = 10;
-        this.ac = 10;
+
+        // Extended stats
         this.speed = 30;
         this.proficiencyBonus = 2;
-        
+
         // Ability Scores
         this.abilities = {
             strength: 10,
@@ -23,33 +27,31 @@ class Character {
             wisdom: 10,
             charisma: 10
         };
-        
-        // Combat Stats
-        this.initiative = 0;
-        this.initiativeModifier = 0;
-        this.conditions = [];
-        this.actions = [];
-        
-        // Character Details
+
+        // Character details
         this.attacks = '';
-        this.notes = '';
-        this.isAlive = true;
-        
+
         // Tracking
         this.createdAt = new Date().toISOString();
         this.lastModified = new Date().toISOString();
     }
 
-    generateId() {
-        return 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
+    // ==================== Ability Scores ====================
 
-    // Ability Score Modifiers
+    /**
+     * Get the modifier for an ability score
+     * @param {string} ability - Name of the ability
+     * @returns {number} The modifier (-5 to +10)
+     */
     getAbilityModifier(ability) {
         const score = this.abilities[ability];
+        if (score === undefined) {
+            throw new Error(`Unknown ability: ${ability}`);
+        }
         return Math.floor((score - 10) / 2);
     }
 
+    // Convenience methods for each ability
     getStrengthModifier() { return this.getAbilityModifier('strength'); }
     getDexterityModifier() { return this.getAbilityModifier('dexterity'); }
     getConstitutionModifier() { return this.getAbilityModifier('constitution'); }
@@ -57,110 +59,97 @@ class Character {
     getWisdomModifier() { return this.getAbilityModifier('wisdom'); }
     getCharismaModifier() { return this.getAbilityModifier('charisma'); }
 
-    // Initiative
+    // ==================== Initiative ====================
+
+    /**
+     * Calculate initiative modifier from Dexterity
+     * @returns {number} The initiative modifier
+     */
     calculateInitiativeModifier() {
         this.initiativeModifier = this.getDexterityModifier();
         return this.initiativeModifier;
     }
 
+    /**
+     * Roll initiative (d20 + Dex modifier)
+     * @returns {number} The initiative result
+     */
     rollInitiative() {
         const roll = Math.floor(Math.random() * 20) + 1;
         this.initiative = roll + this.calculateInitiativeModifier();
         return this.initiative;
     }
 
+    /**
+     * Set initiative to a specific value
+     * @param {number} value - The initiative value
+     */
     setInitiative(value) {
-        this.initiative = value;
+        super.setInitiative(value);
         this.updateLastModified();
     }
 
-    // Health Management
+    // ==================== Health (override to track modifications) ====================
+
     takeDamage(amount) {
-        this.currentHp = Math.max(0, this.currentHp - amount);
-        if (this.currentHp === 0) {
-            this.isAlive = false;
-            this.addCondition('unconscious', -1);
-        }
+        const result = super.takeDamage(amount);
         this.updateLastModified();
-        return this.currentHp;
+        return result;
     }
 
     heal(amount) {
-        this.currentHp = Math.min(this.maxHp, this.currentHp + amount);
-        if (this.currentHp > 0 && !this.isAlive) {
-            this.isAlive = true;
-            this.removeCondition('unconscious');
-        }
+        const result = super.heal(amount);
         this.updateLastModified();
-        return this.currentHp;
+        return result;
     }
 
-    getHpPercentage() {
-        return (this.currentHp / this.maxHp) * 100;
-    }
+    // ==================== Conditions (override to track modifications) ====================
 
-    getStatusColor() {
-        const hpPercent = this.getHpPercentage();
-        if (hpPercent <= 0) return '#dc3545';
-        if (hpPercent <= 25) return '#dc3545';
-        if (hpPercent <= 50) return '#ffc107';
-        if (hpPercent <= 75) return '#fd7e14';
-        return '#28a745';
-    }
-
-    // Conditions
     addCondition(name, duration = -1, description = '') {
-        const condition = {
-            id: this.generateId(),
-            name: name,
-            duration: duration,
-            description: description,
-            appliedTurn: 0
-        };
-        this.conditions.push(condition);
+        const condition = super.addCondition(name, duration, description);
         this.updateLastModified();
         return condition;
     }
 
     removeCondition(name) {
-        this.conditions = this.conditions.filter(condition => condition.name !== name);
+        const result = super.removeCondition(name);
         this.updateLastModified();
-    }
-
-    hasCondition(conditionName) {
-        return this.conditions.some(condition => condition.name === conditionName);
+        return result;
     }
 
     updateConditions() {
-        this.conditions = this.conditions.filter(condition => {
-            if (condition.duration === -1) return true;
-            condition.duration--;
-            return condition.duration > 0;
-        });
+        super.updateConditions();
         this.updateLastModified();
     }
 
-    // Actions
+    // ==================== Actions (override to track modifications) ====================
+
     addAction(action) {
-        const actionEntry = {
-            id: this.generateId(),
-            action: action,
-            turn: 0,
-            timestamp: new Date().toISOString()
-        };
-        this.actions.push(actionEntry);
+        const entry = super.addAction(action);
         this.updateLastModified();
-        return actionEntry;
+        return entry;
     }
 
-    // Saving Throws
+    // ==================== Saving Throws ====================
+
+    /**
+     * Get saving throw bonus for an ability
+     * @param {string} ability - Name of the ability
+     * @returns {number} Saving throw bonus
+     */
     getSavingThrowBonus(ability) {
         const modifier = this.getAbilityModifier(ability);
-        // In a full implementation, you'd check for proficiency in saving throws
+        // TODO: Add proficiency tracking for saving throws
         return modifier;
     }
 
-    // Skill Checks
+    // ==================== Skill Checks ====================
+
+    /**
+     * Get skill bonus
+     * @param {string} skill - Name of the skill
+     * @returns {number} Skill bonus
+     */
     getSkillBonus(skill) {
         const skillAbilities = {
             'acrobatics': 'dexterity',
@@ -182,65 +171,129 @@ class Character {
             'stealth': 'dexterity',
             'survival': 'wisdom'
         };
-        
+
         const ability = skillAbilities[skill];
         if (!ability) return 0;
-        
+
         const modifier = this.getAbilityModifier(ability);
-        // In a full implementation, you'd check for proficiency in skills
+        // TODO: Add proficiency tracking for skills
         return modifier;
     }
 
-    // Update Methods
+    // ==================== Update Methods ====================
+
+    /**
+     * Update character stats
+     * @param {Object} updates - Object with properties to update
+     */
     updateStats(updates) {
-        Object.assign(this, updates);
+        // Only allow updating known properties
+        const allowedProps = ['name', 'class', 'race', 'level', 'maxHp', 'currentHp',
+                             'ac', 'speed', 'proficiencyBonus', 'attacks', 'notes',
+                             'initiativeModifier'];
+
+        for (const prop of allowedProps) {
+            if (updates[prop] !== undefined) {
+                this[prop] = updates[prop];
+            }
+        }
+
         this.calculateInitiativeModifier();
         this.updateLastModified();
     }
 
+    /**
+     * Update ability scores
+     * @param {Object} abilities - Object with ability names and scores
+     */
     updateAbilities(abilities) {
-        Object.assign(this.abilities, abilities);
+        const validAbilities = ['strength', 'dexterity', 'constitution',
+                               'intelligence', 'wisdom', 'charisma'];
+
+        for (const ability of validAbilities) {
+            if (abilities[ability] !== undefined) {
+                const score = parseInt(abilities[ability], 10);
+                if (!isNaN(score) && score >= 1 && score <= 30) {
+                    this.abilities[ability] = score;
+                }
+            }
+        }
+
         this.calculateInitiativeModifier();
         this.updateLastModified();
     }
 
+    /**
+     * Update the last modified timestamp
+     */
     updateLastModified() {
         this.lastModified = new Date().toISOString();
     }
 
-    // Utility Methods
+    // ==================== Clone & Reset ====================
+
+    /**
+     * Create a clone of this character
+     * @returns {Character} A new Character instance
+     */
     clone() {
         const clone = new Character(this.name, this.type);
-        clone.id = this.generateId(); // New ID for clone
+
         clone.class = this.class;
         clone.race = this.race;
         clone.level = this.level;
         clone.maxHp = this.maxHp;
-        clone.currentHp = this.maxHp; // Reset to full HP
+        clone.currentHp = this.maxHp; // Reset to full HP for clone
         clone.ac = this.ac;
         clone.speed = this.speed;
         clone.proficiencyBonus = this.proficiencyBonus;
         clone.abilities = { ...this.abilities };
         clone.attacks = this.attacks;
         clone.notes = this.notes;
-        clone.calculateInitiativeModifier();
+        clone.initiativeModifier = this.initiativeModifier;
+
+        // Reset combat state for clone
         clone.isAlive = true;
         clone.conditions = [];
         clone.actions = [];
         clone.initiative = 0;
+
+        clone.calculateInitiativeModifier();
+
         return clone;
     }
 
+    /**
+     * Reset character to starting state
+     */
     reset() {
-        this.currentHp = this.maxHp;
-        this.isAlive = true;
-        this.conditions = [];
-        this.actions = [];
-        this.initiative = 0;
+        super.reset();
         this.updateLastModified();
     }
 
-    // Serialization
+    // ==================== Display Methods ====================
+
+    /**
+     * Get formatted display name
+     * @returns {string} Display name with class/race info
+     */
+    getDisplayName() {
+        if (this.class && this.race) {
+            return `${this.name} (${this.race} ${this.class})`;
+        } else if (this.class) {
+            return `${this.name} (${this.class})`;
+        } else if (this.race) {
+            return `${this.name} (${this.race})`;
+        }
+        return this.name;
+    }
+
+    // ==================== Serialization ====================
+
+    /**
+     * Serialize character to JSON
+     * @returns {Object} JSON-serializable object
+     */
     toJSON() {
         return {
             id: this.id,
@@ -267,59 +320,48 @@ class Character {
         };
     }
 
+    /**
+     * Create a Character instance from JSON data
+     * @param {Object} data - JSON data
+     * @returns {Character} New Character instance
+     */
     static fromJSON(data) {
-        const character = new Character(data.name, data.type);
-        character.id = data.id;
+        if (!data) {
+            throw new Error('Cannot create Character from null/undefined data');
+        }
+
+        const character = new Character(data.name || 'Unknown', data.type || 'player');
+
+        character.id = data.id || character.id;
         character.class = data.class || '';
         character.race = data.race || '';
         character.level = data.level || 1;
         character.maxHp = data.maxHp || 10;
-        character.currentHp = data.currentHp || 10;
+        character.currentHp = data.currentHp !== undefined ? data.currentHp : 10;
         character.ac = data.ac || 10;
         character.speed = data.speed || 30;
         character.proficiencyBonus = data.proficiencyBonus || 2;
+
         character.abilities = data.abilities || {
             strength: 10, dexterity: 10, constitution: 10,
             intelligence: 10, wisdom: 10, charisma: 10
         };
+
         character.initiative = data.initiative || 0;
         character.initiativeModifier = data.initiativeModifier || 0;
-        character.conditions = data.conditions || [];
-        character.actions = data.actions || [];
+        character.conditions = Array.isArray(data.conditions) ? data.conditions : [];
+        character.actions = Array.isArray(data.actions) ? data.actions : [];
         character.attacks = data.attacks || '';
         character.notes = data.notes || '';
         character.isAlive = data.isAlive !== undefined ? data.isAlive : true;
         character.createdAt = data.createdAt || new Date().toISOString();
         character.lastModified = data.lastModified || new Date().toISOString();
+
         return character;
     }
+}
 
-    // Display Methods
-    getDisplayName() {
-        if (this.class && this.race) {
-            return `${this.name} (${this.race} ${this.class})`;
-        } else if (this.class) {
-            return `${this.name} (${this.class})`;
-        } else if (this.race) {
-            return `${this.name} (${this.race})`;
-        }
-        return this.name;
-    }
-
-    getTypeIcon() {
-        switch (this.type) {
-            case 'player': return '👤';
-            case 'monster': return '👹';
-            case 'npc': return '🧑';
-            default: return '❓';
-        }
-    }
-
-    getStatusText() {
-        if (!this.isAlive) return 'Dead';
-        if (this.currentHp <= this.maxHp * 0.25) return 'Critical';
-        if (this.currentHp <= this.maxHp * 0.5) return 'Wounded';
-        if (this.currentHp <= this.maxHp * 0.75) return 'Injured';
-        return 'Healthy';
-    }
+// Export for use in other modules (if using ES modules)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Character;
 }

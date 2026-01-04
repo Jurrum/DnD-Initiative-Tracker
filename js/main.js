@@ -1,3 +1,7 @@
+/**
+ * UIManager - Main UI controller for D&D Initiative Tracker
+ * Refactored to use safe DOM methods and custom modals
+ */
 class UIManager {
     constructor() {
         this.game = new Game();
@@ -129,6 +133,99 @@ class UIManager {
                 }
             });
         });
+
+        // Event delegation for character list
+        document.getElementById('character-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                this.handleCharacterAction(action, id);
+            }
+        });
+
+        // Event delegation for encounter participants
+        document.getElementById('encounter-participant-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                this.handleParticipantAction(action, id);
+            }
+        });
+
+        // Event delegation for encounter participants initiative input
+        document.getElementById('encounter-participant-list').addEventListener('change', (e) => {
+            if (e.target.classList.contains('initiative-input')) {
+                const id = e.target.dataset.id;
+                this.setParticipantInitiative(id, e.target.value);
+            }
+        });
+
+        // Event delegation for initiative list
+        document.getElementById('initiative-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                this.handleInitiativeAction(action, id);
+            }
+
+            // HP bar click for more actions
+            const hpBar = e.target.closest('.hp-bar[data-id]');
+            if (hpBar) {
+                this.showParticipantActions(hpBar.dataset.id);
+            }
+        });
+
+        // Event delegation for conditions list
+        document.getElementById('active-conditions').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const playerId = btn.dataset.playerId;
+                const conditionName = btn.dataset.conditionName;
+                this.removeCondition(playerId, conditionName);
+            }
+        });
+    }
+
+    // Handle character list button actions
+    handleCharacterAction(action, id) {
+        switch (action) {
+            case 'edit':
+                this.showCharacterModal(this.characterLibrary.getCharacter(id));
+                break;
+            case 'duplicate':
+                this.duplicateCharacter(id);
+                break;
+            case 'delete':
+                this.deleteCharacter(id);
+                break;
+        }
+    }
+
+    // Handle participant list button actions
+    handleParticipantAction(action, id) {
+        switch (action) {
+            case 'remove':
+                this.removeParticipant(id);
+                break;
+        }
+    }
+
+    // Handle initiative list button actions
+    handleInitiativeAction(action, id) {
+        switch (action) {
+            case 'damage':
+                this.quickDamageParticipant(id);
+                break;
+            case 'heal':
+                this.quickHealParticipant(id);
+                break;
+            case 'condition':
+                this.quickAddCondition(id);
+                break;
+        }
     }
 
     setupGameEventHandlers() {
@@ -145,13 +242,11 @@ class UIManager {
     // Tab Management
     switchTab(tabName) {
         this.currentTab = tabName;
-        
-        // Update tab buttons
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabName);
         });
 
-        // Update tab content
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}-tab`);
         });
@@ -161,8 +256,7 @@ class UIManager {
 
     switchCharacterType(type) {
         this.currentCharacterType = type;
-        
-        // Update character type buttons
+
         document.querySelectorAll('.character-type-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
@@ -171,7 +265,6 @@ class UIManager {
     }
 
     switchLibraryTab(type) {
-        // Update library tab buttons
         document.querySelectorAll('.library-tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
@@ -184,19 +277,18 @@ class UIManager {
         this.editingCharacter = character;
         const modal = document.getElementById('character-modal');
         const form = document.getElementById('character-form');
-        const title = document.getElementById('modal-title');
-        
+        const title = document.getElementById('character-modal-title');
+
         title.textContent = character ? 'Edit Character' : `Add New ${this.currentCharacterType}`;
-        
+
         if (character) {
             this.populateCharacterForm(character);
         } else {
             form.reset();
-            // Set default values based on character type
             this.setDefaultCharacterValues();
         }
-        
-        modal.style.display = 'block';
+
+        modal.showModal();
     }
 
     populateCharacterForm(character) {
@@ -222,53 +314,48 @@ class UIManager {
         const level = parseInt(document.getElementById('char-level').value) || 1;
         const proficiencyBonus = Math.ceil(level / 4) + 1;
         document.getElementById('char-proficiency').value = proficiencyBonus;
-        
-        // Set different defaults based on character type
-        if (this.currentCharacterType === 'monster') {
-            document.getElementById('char-class').placeholder = 'e.g., Goblin, Dragon';
-            document.getElementById('char-race').placeholder = 'e.g., Beast, Humanoid';
-        } else if (this.currentCharacterType === 'npc') {
-            document.getElementById('char-class').placeholder = 'e.g., Shopkeeper, Guard';
-            document.getElementById('char-race').placeholder = 'e.g., Human, Elf';
-        }
     }
 
     saveCharacter() {
         const formData = new FormData(document.getElementById('character-form'));
-        
+
         const characterData = {
             name: formData.get('name'),
             type: this.currentCharacterType,
             class: formData.get('class'),
             race: formData.get('race'),
-            level: parseInt(formData.get('level')),
-            maxHp: parseInt(formData.get('hp')),
-            ac: parseInt(formData.get('ac')),
-            speed: parseInt(formData.get('speed')),
-            proficiencyBonus: parseInt(formData.get('proficiencyBonus')),
+            level: parseInt(formData.get('level')) || 1,
+            maxHp: parseInt(formData.get('hp')) || 10,
+            ac: parseInt(formData.get('ac')) || 10,
+            speed: parseInt(formData.get('speed')) || 30,
+            proficiencyBonus: parseInt(formData.get('proficiencyBonus')) || 2,
             abilities: {
-                strength: parseInt(formData.get('strength')),
-                dexterity: parseInt(formData.get('dexterity')),
-                constitution: parseInt(formData.get('constitution')),
-                intelligence: parseInt(formData.get('intelligence')),
-                wisdom: parseInt(formData.get('wisdom')),
-                charisma: parseInt(formData.get('charisma'))
+                strength: parseInt(formData.get('strength')) || 10,
+                dexterity: parseInt(formData.get('dexterity')) || 10,
+                constitution: parseInt(formData.get('constitution')) || 10,
+                intelligence: parseInt(formData.get('intelligence')) || 10,
+                wisdom: parseInt(formData.get('wisdom')) || 10,
+                charisma: parseInt(formData.get('charisma')) || 10
             },
             attacks: formData.get('attacks'),
             notes: formData.get('notes')
         };
 
+        // Validate
+        if (!characterData.name || characterData.name.trim() === '') {
+            this.showNotification('Character name is required', 'error');
+            return;
+        }
+
         if (this.editingCharacter) {
-            // Update existing character
             this.characterLibrary.updateCharacter(this.editingCharacter.id, characterData);
             this.showNotification('Character updated successfully', 'success');
         } else {
-            // Create new character
             const character = new Character(characterData.name, characterData.type);
             character.updateStats(characterData);
             character.updateAbilities(characterData.abilities);
             character.currentHp = characterData.maxHp;
-            
+
             this.characterLibrary.addCharacter(character);
             this.showNotification('Character created successfully', 'success');
         }
@@ -277,8 +364,15 @@ class UIManager {
         this.updateCharacterList();
     }
 
-    deleteCharacter(characterId) {
-        if (confirm('Are you sure you want to delete this character?')) {
+    async deleteCharacter(characterId) {
+        const confirmed = await modalManager.confirm({
+            title: 'Delete Character',
+            message: 'Are you sure you want to delete this character?',
+            confirmText: 'Delete',
+            dangerous: true
+        });
+
+        if (confirmed) {
             this.characterLibrary.removeCharacter(characterId);
             this.updateCharacterList();
             this.showNotification('Character deleted successfully', 'success');
@@ -296,61 +390,68 @@ class UIManager {
     // Library Management
     showLibraryModal() {
         const modal = document.getElementById('library-modal');
-        modal.style.display = 'block';
+        modal.showModal();
         this.updateLibraryList('player');
     }
 
     updateLibraryList(type) {
         const libraryList = document.getElementById('library-character-list');
         const characters = this.characterLibrary.getCharactersByType(type);
-        
-        libraryList.innerHTML = '';
-        
+
+        DOMHelpers.clearChildren(libraryList);
+
         if (characters.length === 0) {
-            libraryList.innerHTML = '<p style="text-align: center; color: #b0b0b0;">No characters found</p>';
+            const emptyMsg = DOMHelpers.createElement('p', {
+                className: 'empty-message',
+                text: 'No characters found',
+                style: { textAlign: 'center', color: '#b0b0b0' }
+            });
+            libraryList.appendChild(emptyMsg);
             return;
         }
 
         characters.forEach(character => {
-            const item = document.createElement('div');
-            item.className = `library-character-item ${character.type}`;
-            item.innerHTML = `
-                <div class="character-header">
-                    <div>
-                        <div class="character-name">${character.getDisplayName()}</div>
-                        <div class="character-details">Level ${character.level} | HP: ${character.maxHp} | AC: ${character.ac}</div>
-                    </div>
-                </div>
-            `;
-            
-            item.addEventListener('click', () => {
-                this.addCharacterToEncounter(character);
+            const item = DOMHelpers.createElement('div', {
+                className: `library-character-item ${character.type}`,
+                events: {
+                    click: () => this.addCharacterToEncounter(character)
+                },
+                children: [
+                    DOMHelpers.createElement('div', {
+                        className: 'character-header',
+                        children: [
+                            DOMHelpers.createElement('div', {
+                                children: [
+                                    DOMHelpers.createElement('div', {
+                                        className: 'character-name',
+                                        text: character.getDisplayName()
+                                    }),
+                                    DOMHelpers.createElement('div', {
+                                        className: 'character-details',
+                                        text: `Level ${character.level} | HP: ${character.maxHp} | AC: ${character.ac}`
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
             });
-            
+
             libraryList.appendChild(item);
         });
     }
 
     addCharacterToEncounter(character) {
-        // Create a copy of the character for the encounter
         const encounterCharacter = character.clone();
-        
-        // Convert to Player for encounter system
-        const player = new Player(encounterCharacter.name, encounterCharacter.maxHp, 
-                                encounterCharacter.ac, encounterCharacter.initiativeModifier, 
-                                encounterCharacter.type);
-        
-        // Copy additional character data
-        player.class = encounterCharacter.class;
-        player.race = encounterCharacter.race;
-        player.level = encounterCharacter.level;
-        player.abilities = encounterCharacter.abilities;
-        player.attacks = encounterCharacter.attacks;
-        player.notes = encounterCharacter.notes;
-        
-        const result = this.game.addPlayer(player.name, player.maxHp, player.ac, 
-                                         player.initiativeModifier, player.type);
-        
+
+        const result = this.game.addPlayer(
+            encounterCharacter.name,
+            encounterCharacter.maxHp,
+            encounterCharacter.ac,
+            encounterCharacter.initiativeModifier,
+            encounterCharacter.type
+        );
+
         if (result.success) {
             this.closeModal(document.getElementById('library-modal'));
             this.updateEncounterParticipants();
@@ -362,13 +463,15 @@ class UIManager {
     loadAllPlayers() {
         const players = this.characterLibrary.getPlayers();
         let addedCount = 0;
-        
+
         players.forEach(character => {
-            const player = new Player(character.name, character.maxHp, character.ac, 
-                                    character.initiativeModifier, character.type);
-            
-            const result = this.game.addPlayer(player.name, player.maxHp, player.ac, 
-                                             player.initiativeModifier, player.type);
+            const result = this.game.addPlayer(
+                character.name,
+                character.maxHp,
+                character.ac,
+                character.initiativeModifier,
+                character.type
+            );
             if (result.success) {
                 addedCount++;
             }
@@ -385,7 +488,6 @@ class UIManager {
             return;
         }
 
-        // Set all initiatives to 0 first
         participants.forEach(player => {
             player.initiative = 0;
         });
@@ -398,11 +500,10 @@ class UIManager {
         const result = this.game.setPlayerInitiative(playerId, parseInt(initiative));
         if (result.success) {
             this.updateEncounterParticipants();
-            
-            // Check if all participants have initiative set
+
             const participants = this.game.getCurrentEncounter().getAllPlayers();
             const allSet = participants.every(p => p.initiative > 0);
-            
+
             if (allSet) {
                 document.getElementById('start-encounter-btn').disabled = false;
                 this.showNotification('All initiatives set! Ready to start encounter.', 'success');
@@ -424,13 +525,13 @@ class UIManager {
             this.showNotification('Add participants before starting encounter', 'error');
             return;
         }
-        
+
         const hasInitiatives = participants.some(p => p.initiative > 0);
         if (!hasInitiatives) {
             this.showNotification('Set initiative before starting encounter', 'error');
             return;
         }
-        
+
         const result = this.game.startEncounter();
         if (result.success) {
             this.showNotification('Encounter started! Combat begins!', 'success');
@@ -439,36 +540,58 @@ class UIManager {
         }
     }
 
-    endEncounter() {
+    async endEncounter() {
         if (!this.game.getCurrentEncounter().isActive) {
             this.showNotification('No active encounter to end', 'info');
             return;
         }
-        
-        if (confirm('Are you sure you want to end the encounter? This will stop combat and reset turn order.')) {
+
+        const confirmed = await modalManager.confirm({
+            title: 'End Encounter',
+            message: 'Are you sure you want to end the encounter? This will stop combat and reset turn order.',
+            confirmText: 'End Encounter',
+            dangerous: true
+        });
+
+        if (confirmed) {
             const result = this.game.endEncounter();
             if (result.success) {
                 this.showNotification('Encounter ended successfully', 'info');
-            } else {
-                this.showNotification('Failed to end encounter', 'error');
             }
         }
     }
 
-    resetEncounter() {
-        if (confirm('Are you sure you want to reset the encounter? This will restore all participants to full HP and clear all conditions.')) {
+    async resetEncounter() {
+        const confirmed = await modalManager.confirm({
+            title: 'Reset Encounter',
+            message: 'Are you sure you want to reset the encounter? This will restore all participants to full HP and clear all conditions.',
+            confirmText: 'Reset',
+            dangerous: true
+        });
+
+        if (confirmed) {
             const result = this.game.resetEncounter();
             if (result.success) {
                 this.showNotification('Encounter reset successfully', 'success');
-            } else {
-                this.showNotification('Failed to reset encounter', 'error');
             }
         }
     }
 
-    newEncounter() {
-        if (confirm('Create a new encounter? This will clear all current participants.')) {
-            const name = prompt('Enter encounter name:', 'New Encounter');
+    async newEncounter() {
+        const confirmed = await modalManager.confirm({
+            title: 'New Encounter',
+            message: 'Create a new encounter? This will clear all current participants.',
+            confirmText: 'Create New'
+        });
+
+        if (confirmed) {
+            const name = await modalManager.prompt({
+                title: 'Encounter Name',
+                message: 'Enter a name for the new encounter:',
+                placeholder: 'New Encounter',
+                defaultValue: 'New Encounter'
+            });
+
             if (name) {
                 this.game.createNewEncounter(name);
                 this.updateUI();
@@ -477,8 +600,14 @@ class UIManager {
         }
     }
 
-    saveEncounter() {
-        const name = prompt('Enter encounter name:', this.game.getCurrentEncounter().name);
+    async saveEncounter() {
+        const name = await modalManager.prompt({
+            title: 'Save Encounter',
+            message: 'Enter encounter name:',
+            placeholder: 'Encounter name',
+            defaultValue: this.game.getCurrentEncounter().name
+        });
+
         if (name) {
             const result = this.game.saveEncounter(name);
             if (result.success) {
@@ -489,28 +618,31 @@ class UIManager {
         }
     }
 
-    loadEncounter() {
+    async loadEncounter() {
         const encounters = this.game.getSavedEncounters();
         if (encounters.length === 0) {
             this.showNotification('No saved encounters found', 'info');
             return;
         }
 
-        const encounterList = encounters.map(e => `${e.name} (${e.players.length} participants)`).join('\n');
-        const selectedName = prompt(`Select encounter to load:\n${encounterList}\n\nEnter exact name:`);
-        
-        if (selectedName) {
-            const encounter = encounters.find(e => e.name === selectedName);
-            if (encounter) {
-                const result = this.game.loadEncounter(encounter.id);
-                if (result.success) {
-                    this.updateUI();
-                    this.showNotification('Encounter loaded successfully', 'success');
-                } else {
-                    this.showNotification('Failed to load encounter', 'error');
-                }
+        const choices = encounters.map(e => ({
+            value: e.id,
+            text: `${e.name} (${e.players.length} participants)`
+        }));
+
+        const encounterId = await modalManager.select({
+            title: 'Load Encounter',
+            message: 'Select an encounter to load:',
+            choices
+        });
+
+        if (encounterId) {
+            const result = this.game.loadEncounter(encounterId);
+            if (result.success) {
+                this.updateUI();
+                this.showNotification('Encounter loaded successfully', 'success');
             } else {
-                this.showNotification('Encounter not found', 'error');
+                this.showNotification('Failed to load encounter', 'error');
             }
         }
     }
@@ -530,19 +662,30 @@ class UIManager {
         }
     }
 
-    showAddConditionModal() {
+    async showAddConditionModal() {
         const currentPlayer = this.game.getCurrentEncounter().getCurrentPlayer();
         if (!currentPlayer) {
             this.showNotification('No active participant selected', 'error');
             return;
         }
 
-        const conditionName = prompt('Enter condition name:');
-        if (conditionName) {
-            const duration = prompt('Enter duration (rounds, -1 for permanent):', '-1');
-            const description = prompt('Enter description (optional):') || '';
-            
-            const result = this.game.addCondition(currentPlayer.id, conditionName, parseInt(duration), description);
+        const data = await modalManager.form({
+            title: `Add Condition to ${currentPlayer.name}`,
+            fields: [
+                { name: 'conditionName', label: 'Condition Name', type: 'text', required: true, placeholder: 'e.g., Poisoned' },
+                { name: 'duration', label: 'Duration (rounds, -1 for permanent)', type: 'number', value: '-1' },
+                { name: 'description', label: 'Description (optional)', type: 'textarea' }
+            ],
+            submitText: 'Add Condition'
+        });
+
+        if (data) {
+            const result = this.game.addCondition(
+                currentPlayer.id,
+                data.conditionName,
+                parseInt(data.duration),
+                data.description
+            );
             if (result.success) {
                 this.showNotification(result.message, 'success');
             } else {
@@ -551,14 +694,21 @@ class UIManager {
         }
     }
 
-    showDealDamageModal() {
+    async showDealDamageModal() {
         const currentPlayer = this.game.getCurrentEncounter().getCurrentPlayer();
         if (!currentPlayer) {
             this.showNotification('No active participant selected', 'error');
             return;
         }
 
-        const damage = prompt(`Deal damage to ${currentPlayer.name}:`);
+        const damage = await modalManager.prompt({
+            title: 'Deal Damage',
+            message: `Deal damage to ${currentPlayer.name}:`,
+            placeholder: 'Enter damage amount',
+            type: 'number',
+            min: 0
+        });
+
         if (damage && !isNaN(damage)) {
             const result = this.game.dealDamage(currentPlayer.id, parseInt(damage));
             if (result.success) {
@@ -569,14 +719,21 @@ class UIManager {
         }
     }
 
-    showHealModal() {
+    async showHealModal() {
         const currentPlayer = this.game.getCurrentEncounter().getCurrentPlayer();
         if (!currentPlayer) {
             this.showNotification('No active participant selected', 'error');
             return;
         }
 
-        const healing = prompt(`Heal ${currentPlayer.name}:`);
+        const healing = await modalManager.prompt({
+            title: 'Heal',
+            message: `Heal ${currentPlayer.name}:`,
+            placeholder: 'Enter healing amount',
+            type: 'number',
+            min: 0
+        });
+
         if (healing && !isNaN(healing)) {
             const result = this.game.healPlayer(currentPlayer.id, parseInt(healing));
             if (result.success) {
@@ -588,14 +745,21 @@ class UIManager {
     }
 
     // Quick action methods for initiative list
-    quickDamageParticipant(participantId) {
+    async quickDamageParticipant(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
             return;
         }
 
-        const damage = prompt(`Deal damage to ${participant.name}:`);
+        const damage = await modalManager.prompt({
+            title: 'Deal Damage',
+            message: `Deal damage to ${participant.name}:`,
+            placeholder: 'Enter damage amount',
+            type: 'number',
+            min: 0
+        });
+
         if (damage && !isNaN(damage)) {
             const result = this.game.dealDamage(participantId, parseInt(damage));
             if (result.success) {
@@ -606,14 +770,21 @@ class UIManager {
         }
     }
 
-    quickHealParticipant(participantId) {
+    async quickHealParticipant(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
             return;
         }
 
-        const healing = prompt(`Heal ${participant.name}:`);
+        const healing = await modalManager.prompt({
+            title: 'Heal',
+            message: `Heal ${participant.name}:`,
+            placeholder: 'Enter healing amount',
+            type: 'number',
+            min: 0
+        });
+
         if (healing && !isNaN(healing)) {
             const result = this.game.healPlayer(participantId, parseInt(healing));
             if (result.success) {
@@ -624,77 +795,77 @@ class UIManager {
         }
     }
 
-    quickAddCondition(participantId) {
+    async quickAddCondition(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
             return;
         }
 
-        const conditionName = prompt(`Add condition to ${participant.name}:`);
-        if (conditionName) {
-            const duration = prompt('Enter duration (rounds, -1 for permanent):', '-1');
-            const description = prompt('Enter description (optional):') || '';
-            
-            const result = this.game.addCondition(participantId, conditionName, parseInt(duration), description);
+        const data = await modalManager.form({
+            title: `Add Condition to ${participant.name}`,
+            fields: [
+                { name: 'conditionName', label: 'Condition Name', type: 'text', required: true, placeholder: 'e.g., Poisoned' },
+                { name: 'duration', label: 'Duration (rounds, -1 for permanent)', type: 'number', value: '-1' }
+            ],
+            submitText: 'Add Condition'
+        });
+
+        if (data) {
+            const result = this.game.addCondition(participantId, data.conditionName, parseInt(data.duration), '');
             if (result.success) {
-                this.showNotification(`${conditionName} applied to ${participant.name}`, 'success');
+                this.showNotification(`${data.conditionName} applied to ${participant.name}`, 'success');
             } else {
                 this.showNotification(result.message, 'error');
             }
         }
     }
 
-    showParticipantActions(participantId) {
+    async showParticipantActions(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
             return;
         }
 
-        const actions = [
-            'Deal Damage',
-            'Heal',
-            'Add Condition',
-            'Remove Condition',
-            'Set HP',
-            'View Details',
-            'Cancel'
-        ];
+        const action = await modalManager.select({
+            title: `Actions for ${participant.name}`,
+            message: 'Select an action:',
+            choices: [
+                { value: 'damage', text: 'Deal Damage' },
+                { value: 'heal', text: 'Heal' },
+                { value: 'condition', text: 'Add Condition' },
+                { value: 'removeCondition', text: 'Remove Condition' },
+                { value: 'setHP', text: 'Set HP' },
+                { value: 'details', text: 'View Details' }
+            ]
+        });
 
-        const action = prompt(`Actions for ${participant.name}:\n${actions.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\nEnter number (1-${actions.length}):`);
-        
-        if (action && !isNaN(action)) {
-            const actionIndex = parseInt(action) - 1;
-            
-            switch (actionIndex) {
-                case 0: // Deal Damage
-                    this.quickDamageParticipant(participantId);
+        if (action) {
+            switch (action) {
+                case 'damage':
+                    await this.quickDamageParticipant(participantId);
                     break;
-                case 1: // Heal
-                    this.quickHealParticipant(participantId);
+                case 'heal':
+                    await this.quickHealParticipant(participantId);
                     break;
-                case 2: // Add Condition
-                    this.quickAddCondition(participantId);
+                case 'condition':
+                    await this.quickAddCondition(participantId);
                     break;
-                case 3: // Remove Condition
-                    this.showRemoveConditionForParticipant(participantId);
+                case 'removeCondition':
+                    await this.showRemoveConditionForParticipant(participantId);
                     break;
-                case 4: // Set HP
-                    this.setParticipantHP(participantId);
+                case 'setHP':
+                    await this.setParticipantHP(participantId);
                     break;
-                case 5: // View Details
-                    this.showParticipantDetails(participantId);
+                case 'details':
+                    await this.showParticipantDetails(participantId);
                     break;
-                case 6: // Cancel
-                    return;
-                default:
-                    this.showNotification('Invalid action selected', 'error');
             }
         }
     }
 
-    showRemoveConditionForParticipant(participantId) {
+    async showRemoveConditionForParticipant(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
@@ -706,37 +877,46 @@ class UIManager {
             return;
         }
 
-        const conditionsList = participant.conditions.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
-        const selection = prompt(`Remove condition from ${participant.name}:\n${conditionsList}\n\nEnter number:`);
-        
-        if (selection && !isNaN(selection)) {
-            const conditionIndex = parseInt(selection) - 1;
-            if (conditionIndex >= 0 && conditionIndex < participant.conditions.length) {
-                const conditionName = participant.conditions[conditionIndex].name;
-                const result = this.game.removeCondition(participantId, conditionName);
-                if (result.success) {
-                    this.showNotification(`${conditionName} removed from ${participant.name}`, 'success');
-                } else {
-                    this.showNotification(result.message, 'error');
-                }
+        const conditionName = await modalManager.select({
+            title: `Remove Condition from ${participant.name}`,
+            message: 'Select a condition to remove:',
+            choices: participant.conditions.map(c => ({
+                value: c.name,
+                text: `${c.name} (${c.duration === -1 ? 'Permanent' : c.duration + ' rounds'})`
+            }))
+        });
+
+        if (conditionName) {
+            const result = this.game.removeCondition(participantId, conditionName);
+            if (result.success) {
+                this.showNotification(`${conditionName} removed from ${participant.name}`, 'success');
             } else {
-                this.showNotification('Invalid selection', 'error');
+                this.showNotification(result.message, 'error');
             }
         }
     }
 
-    setParticipantHP(participantId) {
+    async setParticipantHP(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
             return;
         }
 
-        const newHP = prompt(`Set HP for ${participant.name} (current: ${participant.currentHp}/${participant.maxHp}):`);
-        if (newHP && !isNaN(newHP)) {
+        const newHP = await modalManager.prompt({
+            title: 'Set HP',
+            message: `Set HP for ${participant.name} (current: ${participant.currentHp}/${participant.maxHp}):`,
+            placeholder: 'Enter new HP value',
+            type: 'number',
+            min: 0,
+            max: participant.maxHp,
+            defaultValue: String(participant.currentHp)
+        });
+
+        if (newHP !== null && !isNaN(newHP)) {
             const hp = Math.max(0, Math.min(participant.maxHp, parseInt(newHP)));
             const difference = hp - participant.currentHp;
-            
+
             if (difference > 0) {
                 this.game.healPlayer(participantId, difference);
                 this.showNotification(`${participant.name} HP set to ${hp}`, 'success');
@@ -749,7 +929,7 @@ class UIManager {
         }
     }
 
-    showParticipantDetails(participantId) {
+    async showParticipantDetails(participantId) {
         const participant = this.game.getCurrentEncounter().getPlayer(participantId);
         if (!participant) {
             this.showNotification('Participant not found', 'error');
@@ -763,15 +943,15 @@ class UIManager {
             `AC: ${participant.ac}`,
             `Initiative: ${participant.initiative}`,
             `Status: ${participant.isAlive ? 'Alive' : 'Dead'}`,
-            participant.class ? `Class: ${participant.class}` : '',
-            participant.race ? `Race: ${participant.race}` : '',
-            participant.level ? `Level: ${participant.level}` : '',
             participant.conditions.length > 0 ? `Conditions: ${participant.conditions.map(c => c.name).join(', ')}` : '',
-            participant.attacks ? `Attacks: ${participant.attacks}` : '',
             participant.notes ? `Notes: ${participant.notes}` : ''
         ].filter(detail => detail).join('\n');
 
-        alert(`${participant.name} Details:\n\n${details}`);
+        await modalManager.alert({
+            title: `${participant.name} Details`,
+            message: details,
+            type: 'info'
+        });
     }
 
     // UI Updates
@@ -782,7 +962,7 @@ class UIManager {
             this.updateEncounterParticipants();
             this.updateEncounterControls();
         }
-        
+
         this.updateInitiativeList();
         this.updateConditionsList();
     }
@@ -790,84 +970,159 @@ class UIManager {
     updateCharacterList() {
         const characterList = document.getElementById('character-list');
         const characters = this.characterLibrary.getCharactersByType(this.currentCharacterType);
-        
-        characterList.innerHTML = '';
-        
+
+        DOMHelpers.clearChildren(characterList);
+
         if (characters.length === 0) {
-            characterList.innerHTML = '<p style="text-align: center; color: #b0b0b0; margin-top: 20px;">No characters found. Click "Add New Character" to create one.</p>';
+            const emptyMsg = DOMHelpers.createElement('p', {
+                className: 'empty-message',
+                text: 'No characters found. Click "Add New Character" to create one.',
+                style: { textAlign: 'center', color: '#b0b0b0', marginTop: '20px' }
+            });
+            characterList.appendChild(emptyMsg);
             return;
         }
 
         characters.forEach(character => {
-            const item = document.createElement('div');
-            item.className = `character-item ${character.type}`;
-            item.innerHTML = `
-                <div class="character-header">
-                    <div>
-                        <div class="character-name">${character.getDisplayName()}</div>
-                        <div class="character-details">Level ${character.level} | HP: ${character.maxHp} | AC: ${character.ac}</div>
-                        <div class="character-details">Init: ${character.initiativeModifier >= 0 ? '+' : ''}${character.initiativeModifier} | Status: ${character.getStatusText()}</div>
-                    </div>
-                    <div class="character-actions">
-                        <button class="btn btn-primary btn-sm" onclick="uiManager.showCharacterModal(uiManager.characterLibrary.getCharacter('${character.id}'))">Edit</button>
-                        <button class="btn btn-secondary btn-sm" onclick="uiManager.duplicateCharacter('${character.id}')">Duplicate</button>
-                        <button class="btn btn-danger btn-sm" onclick="uiManager.deleteCharacter('${character.id}')">Delete</button>
-                    </div>
-                </div>
-                <div class="character-stats-grid">
-                    <div class="stat">
-                        <span class="stat-label">STR</span>
-                        <span class="stat-value">${character.abilities.strength} (${character.getStrengthModifier() >= 0 ? '+' : ''}${character.getStrengthModifier()})</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">DEX</span>
-                        <span class="stat-value">${character.abilities.dexterity} (${character.getDexterityModifier() >= 0 ? '+' : ''}${character.getDexterityModifier()})</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">CON</span>
-                        <span class="stat-value">${character.abilities.constitution} (${character.getConstitutionModifier() >= 0 ? '+' : ''}${character.getConstitutionModifier()})</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Speed</span>
-                        <span class="stat-value">${character.speed} ft</span>
-                    </div>
-                </div>
-                ${character.attacks ? `<div class="character-details"><strong>Attacks:</strong> ${character.attacks}</div>` : ''}
-                ${character.notes ? `<div class="character-details"><strong>Notes:</strong> ${character.notes}</div>` : ''}
-            `;
-            
+            const item = this.createCharacterItem(character);
             characterList.appendChild(item);
         });
+    }
+
+    createCharacterItem(character) {
+        const item = DOMHelpers.createElement('div', {
+            className: `character-item ${character.type}`
+        });
+
+        // Header section
+        const header = DOMHelpers.createElement('div', { className: 'character-header' });
+
+        const info = DOMHelpers.createElement('div');
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'character-name',
+            text: character.getDisplayName()
+        }));
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'character-details',
+            text: `Level ${character.level} | HP: ${character.maxHp} | AC: ${character.ac}`
+        }));
+
+        const initMod = character.initiativeModifier >= 0 ? '+' : '';
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'character-details',
+            text: `Init: ${initMod}${character.initiativeModifier} | Status: ${character.getStatusText()}`
+        }));
+
+        // Actions
+        const actions = DOMHelpers.createElement('div', { className: 'character-actions' });
+        actions.appendChild(DOMHelpers.createButton('Edit', 'btn btn-primary btn-sm', null, { action: 'edit', id: character.id }));
+        actions.appendChild(DOMHelpers.createButton('Duplicate', 'btn btn-secondary btn-sm', null, { action: 'duplicate', id: character.id }));
+        actions.appendChild(DOMHelpers.createButton('Delete', 'btn btn-danger btn-sm', null, { action: 'delete', id: character.id }));
+
+        header.appendChild(info);
+        header.appendChild(actions);
+        item.appendChild(header);
+
+        // Stats grid
+        const statsGrid = DOMHelpers.createElement('div', { className: 'character-stats-grid' });
+        const abilities = [
+            { label: 'STR', value: character.abilities.strength, mod: character.getStrengthModifier() },
+            { label: 'DEX', value: character.abilities.dexterity, mod: character.getDexterityModifier() },
+            { label: 'CON', value: character.abilities.constitution, mod: character.getConstitutionModifier() },
+            { label: 'Speed', value: character.speed, suffix: ' ft' }
+        ];
+
+        abilities.forEach(stat => {
+            const statDiv = DOMHelpers.createElement('div', { className: 'stat' });
+            statDiv.appendChild(DOMHelpers.createElement('span', { className: 'stat-label', text: stat.label }));
+
+            let valueText;
+            if (stat.mod !== undefined) {
+                const modSign = stat.mod >= 0 ? '+' : '';
+                valueText = `${stat.value} (${modSign}${stat.mod})`;
+            } else {
+                valueText = `${stat.value}${stat.suffix || ''}`;
+            }
+            statDiv.appendChild(DOMHelpers.createElement('span', { className: 'stat-value', text: valueText }));
+            statsGrid.appendChild(statDiv);
+        });
+
+        item.appendChild(statsGrid);
+
+        // Attacks and notes
+        if (character.attacks) {
+            const attacksDiv = DOMHelpers.createElement('div', { className: 'character-details' });
+            attacksDiv.appendChild(DOMHelpers.createElement('strong', { text: 'Attacks: ' }));
+            attacksDiv.appendChild(DOMHelpers.text(character.attacks));
+            item.appendChild(attacksDiv);
+        }
+
+        if (character.notes) {
+            const notesDiv = DOMHelpers.createElement('div', { className: 'character-details' });
+            notesDiv.appendChild(DOMHelpers.createElement('strong', { text: 'Notes: ' }));
+            notesDiv.appendChild(DOMHelpers.text(character.notes));
+            item.appendChild(notesDiv);
+        }
+
+        return item;
     }
 
     updateEncounterParticipants() {
         const participantList = document.getElementById('encounter-participant-list');
         const participants = this.game.getCurrentEncounter().getAllPlayers();
-        
-        participantList.innerHTML = '';
-        
+
+        DOMHelpers.clearChildren(participantList);
+
         if (participants.length === 0) {
-            participantList.innerHTML = '<p style="text-align: center; color: #b0b0b0; margin-top: 20px;">No participants in encounter. Use "Load All Players" or "Add from Library" to add participants.</p>';
+            const emptyMsg = DOMHelpers.createElement('p', {
+                className: 'empty-message',
+                text: 'No participants in encounter. Use "Load All Players" or "Add from Library" to add participants.',
+                style: { textAlign: 'center', color: '#b0b0b0', marginTop: '20px' }
+            });
+            participantList.appendChild(emptyMsg);
             return;
         }
 
         participants.forEach(participant => {
-            const item = document.createElement('div');
-            item.className = `encounter-participant-item ${participant.type}`;
-            item.innerHTML = `
-                <div class="participant-info">
-                    <div class="participant-name">${participant.name}</div>
-                    <div class="participant-details">HP: ${participant.currentHp}/${participant.maxHp} | AC: ${participant.ac} | Type: ${participant.type}</div>
-                </div>
-                <div class="participant-actions">
-                    <input type="number" class="initiative-input" value="${participant.initiative}" 
-                           placeholder="Init" onchange="uiManager.setParticipantInitiative('${participant.id}', this.value)">
-                    <button class="btn btn-danger btn-sm" onclick="uiManager.removeParticipant('${participant.id}')">Remove</button>
-                </div>
-            `;
-            
+            const item = this.createParticipantItem(participant);
             participantList.appendChild(item);
         });
+    }
+
+    createParticipantItem(participant) {
+        const item = DOMHelpers.createElement('div', {
+            className: `encounter-participant-item ${participant.type}`
+        });
+
+        const info = DOMHelpers.createElement('div', { className: 'participant-info' });
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'participant-name',
+            text: participant.name
+        }));
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'participant-details',
+            text: `HP: ${participant.currentHp}/${participant.maxHp} | AC: ${participant.ac} | Type: ${participant.type}`
+        }));
+
+        const actions = DOMHelpers.createElement('div', { className: 'participant-actions' });
+
+        const initInput = DOMHelpers.createInput('number', {
+            className: 'initiative-input',
+            value: participant.initiative,
+            placeholder: 'Init'
+        });
+        initInput.dataset.id = participant.id;
+
+        actions.appendChild(initInput);
+        actions.appendChild(DOMHelpers.createButton('Remove', 'btn btn-danger btn-sm', null, {
+            action: 'remove',
+            id: participant.id
+        }));
+
+        item.appendChild(info);
+        item.appendChild(actions);
+
+        return item;
     }
 
     updateEncounterControls() {
@@ -877,20 +1132,19 @@ class UIManager {
         const nextBtn = document.getElementById('next-turn-btn');
         const prevBtn = document.getElementById('prev-turn-btn');
         const currentTurnInfo = document.getElementById('current-turn-info');
-        
-        const hasParticipants = encounter.getAllPlayers().length > 0;
+
         const hasInitiatives = encounter.getAllPlayers().some(p => p.initiative > 0);
-        
+
         startBtn.disabled = !hasInitiatives || encounter.isActive;
         endBtn.disabled = !encounter.isActive;
         nextBtn.disabled = !encounter.isActive;
         prevBtn.disabled = !encounter.isActive;
-        
+
         if (encounter.isActive) {
             const currentPlayer = encounter.getCurrentPlayer();
             const round = encounter.getCurrentRound();
-            currentTurnInfo.textContent = currentPlayer ? 
-                `${currentPlayer.name} (Round ${round})` : 
+            currentTurnInfo.textContent = currentPlayer ?
+                `${currentPlayer.name} (Round ${round})` :
                 'No active participant';
         } else {
             currentTurnInfo.textContent = 'Not started';
@@ -902,85 +1156,142 @@ class UIManager {
         const encounter = this.game.getCurrentEncounter();
         const participants = encounter.getInitiativeOrder();
         const currentPlayer = encounter.getCurrentPlayer();
-        
-        initiativeList.innerHTML = '';
-        
+
+        DOMHelpers.clearChildren(initiativeList);
+
         if (participants.length === 0) {
-            initiativeList.innerHTML = '<p style="text-align: center; color: #b0b0b0; margin-top: 20px;">No participants in initiative order</p>';
+            const emptyMsg = DOMHelpers.createElement('p', {
+                className: 'empty-message',
+                text: 'No participants in initiative order',
+                style: { textAlign: 'center', color: '#b0b0b0', marginTop: '20px' }
+            });
+            initiativeList.appendChild(emptyMsg);
             return;
         }
-        
-        participants.forEach((participant, index) => {
-            const initiativeItem = document.createElement('div');
-            initiativeItem.className = `initiative-item ${currentPlayer && currentPlayer.id === participant.id ? 'current-turn' : ''}`;
-            
-            const hpPercentage = participant.getHpPercentage();
-            const conditions = participant.conditions.map(c => c.name).join(', ');
-            
-            initiativeItem.innerHTML = `
-                <div class="initiative-header">
-                    <span class="initiative-name">${participant.name}</span>
-                    <div class="initiative-actions">
-                        <span class="initiative-value">${participant.initiative}</span>
-                        <div class="participant-quick-actions">
-                            <button class="btn btn-sm btn-danger" onclick="uiManager.quickDamageParticipant('${participant.id}')" title="Deal Damage">-HP</button>
-                            <button class="btn btn-sm btn-success" onclick="uiManager.quickHealParticipant('${participant.id}')" title="Heal">+HP</button>
-                            <button class="btn btn-sm btn-warning" onclick="uiManager.quickAddCondition('${participant.id}')" title="Add Condition">+Cond</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="initiative-stats">
-                    <div class="stat">
-                        <span class="stat-label">HP</span>
-                        <span class="stat-value">${participant.currentHp}/${participant.maxHp}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">AC</span>
-                        <span class="stat-value">${participant.ac}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Status</span>
-                        <span class="stat-value">${participant.isAlive ? 'Alive' : 'Dead'}</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Type</span>
-                        <span class="stat-value">${participant.type}</span>
-                    </div>
-                </div>
-                <div class="hp-bar" onclick="uiManager.showParticipantActions('${participant.id}')" title="Click for more actions">
-                    <div class="hp-fill" style="width: ${hpPercentage}%; background-color: ${participant.getStatusColor()}"></div>
-                </div>
-                ${conditions ? `<div class="conditions">Conditions: ${conditions}</div>` : ''}
-            `;
-            
-            initiativeList.appendChild(initiativeItem);
+
+        participants.forEach(participant => {
+            const item = this.createInitiativeItem(participant, currentPlayer);
+            initiativeList.appendChild(item);
         });
+    }
+
+    createInitiativeItem(participant, currentPlayer) {
+        const isCurrent = currentPlayer && currentPlayer.id === participant.id;
+        const item = DOMHelpers.createElement('div', {
+            className: `initiative-item ${isCurrent ? 'current-turn' : ''}`
+        });
+
+        // Header with name and actions
+        const header = DOMHelpers.createElement('div', { className: 'initiative-header' });
+        header.appendChild(DOMHelpers.createElement('span', {
+            className: 'initiative-name',
+            text: participant.name
+        }));
+
+        const actionsDiv = DOMHelpers.createElement('div', { className: 'initiative-actions' });
+        actionsDiv.appendChild(DOMHelpers.createElement('span', {
+            className: 'initiative-value',
+            text: String(participant.initiative)
+        }));
+
+        const quickActions = DOMHelpers.createElement('div', { className: 'participant-quick-actions' });
+        quickActions.appendChild(DOMHelpers.createButton('-HP', 'btn btn-sm btn-danger', null, { action: 'damage', id: participant.id }));
+        quickActions.appendChild(DOMHelpers.createButton('+HP', 'btn btn-sm btn-success', null, { action: 'heal', id: participant.id }));
+        quickActions.appendChild(DOMHelpers.createButton('+Cond', 'btn btn-sm btn-warning', null, { action: 'condition', id: participant.id }));
+
+        actionsDiv.appendChild(quickActions);
+        header.appendChild(actionsDiv);
+        item.appendChild(header);
+
+        // Stats
+        const stats = DOMHelpers.createElement('div', { className: 'initiative-stats' });
+        const statItems = [
+            { label: 'HP', value: `${participant.currentHp}/${participant.maxHp}` },
+            { label: 'AC', value: participant.ac },
+            { label: 'Status', value: participant.isAlive ? 'Alive' : 'Dead' },
+            { label: 'Type', value: participant.type }
+        ];
+
+        statItems.forEach(stat => {
+            const statDiv = DOMHelpers.createElement('div', { className: 'stat' });
+            statDiv.appendChild(DOMHelpers.createElement('span', { className: 'stat-label', text: stat.label }));
+            statDiv.appendChild(DOMHelpers.createElement('span', { className: 'stat-value', text: String(stat.value) }));
+            stats.appendChild(statDiv);
+        });
+        item.appendChild(stats);
+
+        // HP Bar
+        const hpPercentage = participant.getHpPercentage();
+        const hpBar = DOMHelpers.createElement('div', {
+            className: 'hp-bar',
+            data: { id: participant.id },
+            attrs: { title: 'Click for more actions' }
+        });
+        const hpFill = DOMHelpers.createElement('div', {
+            className: 'hp-fill',
+            style: {
+                width: `${hpPercentage}%`,
+                backgroundColor: participant.getStatusColor()
+            }
+        });
+        hpBar.appendChild(hpFill);
+        item.appendChild(hpBar);
+
+        // Conditions
+        if (participant.conditions.length > 0) {
+            const conditionsDiv = DOMHelpers.createElement('div', {
+                className: 'conditions',
+                text: `Conditions: ${participant.conditions.map(c => c.name).join(', ')}`
+            });
+            item.appendChild(conditionsDiv);
+        }
+
+        return item;
     }
 
     updateConditionsList() {
         const conditionsList = document.getElementById('active-conditions');
         const conditions = this.game.getCurrentEncounter().getAllConditions();
-        
-        conditionsList.innerHTML = '';
-        
+
+        DOMHelpers.clearChildren(conditionsList);
+
         if (conditions.length === 0) {
-            conditionsList.innerHTML = '<p style="text-align: center; color: #b0b0b0; margin-top: 10px;">No active conditions</p>';
+            const emptyMsg = DOMHelpers.createElement('p', {
+                className: 'empty-message',
+                text: 'No active conditions',
+                style: { textAlign: 'center', color: '#b0b0b0', marginTop: '10px' }
+            });
+            conditionsList.appendChild(emptyMsg);
             return;
         }
-        
+
         conditions.forEach(condition => {
-            const conditionItem = document.createElement('div');
-            conditionItem.className = 'condition-item';
-            conditionItem.innerHTML = `
-                <div class="condition-info">
-                    <div class="condition-name">${condition.name}</div>
-                    <div class="condition-target">Target: ${condition.playerName}</div>
-                    <div class="condition-duration">Duration: ${condition.duration === -1 ? 'Permanent' : condition.duration + ' rounds'}</div>
-                </div>
-                <button class="btn btn-danger btn-sm" onclick="uiManager.removeCondition('${condition.playerId}', '${condition.name}')">Remove</button>
-            `;
-            conditionsList.appendChild(conditionItem);
+            const item = this.createConditionItem(condition);
+            conditionsList.appendChild(item);
         });
+    }
+
+    createConditionItem(condition) {
+        const item = DOMHelpers.createElement('div', { className: 'condition-item' });
+
+        const info = DOMHelpers.createElement('div', { className: 'condition-info' });
+        info.appendChild(DOMHelpers.createElement('div', { className: 'condition-name', text: condition.name }));
+        info.appendChild(DOMHelpers.createElement('div', { className: 'condition-target', text: `Target: ${condition.playerName}` }));
+        info.appendChild(DOMHelpers.createElement('div', {
+            className: 'condition-duration',
+            text: `Duration: ${condition.duration === -1 ? 'Permanent' : condition.duration + ' rounds'}`
+        }));
+
+        const removeBtn = DOMHelpers.createButton('Remove', 'btn btn-danger btn-sm', null, {
+            action: 'remove',
+            playerId: condition.playerId,
+            conditionName: condition.name
+        });
+
+        item.appendChild(info);
+        item.appendChild(removeBtn);
+
+        return item;
     }
 
     removeCondition(playerId, conditionName) {
@@ -994,11 +1305,16 @@ class UIManager {
 
     // Utility Methods
     closeModal(modal) {
-        modal.style.display = 'none';
+        if (modal && typeof modal.close === 'function') {
+            modal.close();
+        }
         this.editingCharacter = null;
     }
 
     handleKeyboardShortcuts(e) {
+        // Don't trigger shortcuts when typing in inputs or when a modal is open
+        if (modalManager.activeModal) return;
+
         if (e.ctrlKey || e.metaKey) {
             switch (e.key) {
                 case 'n':
@@ -1013,12 +1329,16 @@ class UIManager {
         } else {
             switch (e.key) {
                 case 'n':
-                    if (document.activeElement.tagName !== 'INPUT' && this.game.getCurrentEncounter().isActive) {
+                    if (document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA' &&
+                        this.game.getCurrentEncounter().isActive) {
                         this.nextTurn();
                     }
                     break;
                 case 'p':
-                    if (document.activeElement.tagName !== 'INPUT' && this.game.getCurrentEncounter().isActive) {
+                    if (document.activeElement.tagName !== 'INPUT' &&
+                        document.activeElement.tagName !== 'TEXTAREA' &&
+                        this.game.getCurrentEncounter().isActive) {
                         this.previousTurn();
                     }
                     break;
@@ -1027,65 +1347,10 @@ class UIManager {
     }
 
     showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
-            color: white;
-            padding: 15px 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            z-index: 1000;
-            max-width: 300px;
-            animation: slideIn 0.3s ease;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+        DOMHelpers.showNotification(message, type);
     }
 }
 
-// Add notification animation styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .btn-sm {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
-    
-    .conditions {
-        margin-top: 10px;
-        padding: 5px;
-        background: #4a4a4a;
-        border-radius: 4px;
-        font-size: 12px;
-        color: #ffc107;
-    }
-`;
-document.head.appendChild(style);
 
 // Initialize the UI Manager
 const uiManager = new UIManager();

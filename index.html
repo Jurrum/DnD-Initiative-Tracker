@@ -8,100 +8,100 @@
 </head>
 <body>
     <div class="container">
-        <header class="header">
+        <header class="header" role="banner">
             <h1>D&D Initiative Tracker</h1>
-            <div class="header-actions">
-                <button id="new-encounter-btn" class="btn btn-primary">New Encounter</button>
-                <button id="save-encounter-btn" class="btn btn-secondary">Save Encounter</button>
-                <button id="load-encounter-btn" class="btn btn-secondary">Load Encounter</button>
-            </div>
+            <nav class="header-actions" aria-label="Encounter management">
+                <button id="new-encounter-btn" class="btn btn-primary" aria-label="Create new encounter">New Encounter</button>
+                <button id="save-encounter-btn" class="btn btn-secondary" aria-label="Save current encounter">Save Encounter</button>
+                <button id="load-encounter-btn" class="btn btn-secondary" aria-label="Load saved encounter">Load Encounter</button>
+            </nav>
         </header>
 
-        <main class="main-content">
-            <div class="sidebar">
+        <main class="main-content" role="main">
+            <aside class="sidebar" role="complementary" aria-label="Character and encounter management">
                 <!-- Tab Navigation -->
-                <div class="tab-navigation">
-                    <button class="tab-btn active" data-tab="characters">Characters</button>
-                    <button class="tab-btn" data-tab="encounter">Encounter</button>
+                <div class="tab-navigation" role="tablist" aria-label="Main sections">
+                    <button class="tab-btn active" data-tab="characters" role="tab" aria-selected="true" aria-controls="characters-tab" id="characters-tab-btn">Characters</button>
+                    <button class="tab-btn" data-tab="encounter" role="tab" aria-selected="false" aria-controls="encounter-tab" id="encounter-tab-btn">Encounter</button>
                 </div>
 
                 <!-- Characters Tab -->
-                <div id="characters-tab" class="tab-content active">
+                <div id="characters-tab" class="tab-content active" role="tabpanel" aria-labelledby="characters-tab-btn">
                     <!-- Character Type Tabs -->
-                    <div class="character-type-tabs">
-                        <button class="character-type-btn active" data-type="player">Players</button>
-                        <button class="character-type-btn" data-type="monster">Monsters</button>
-                        <button class="character-type-btn" data-type="npc">NPCs</button>
+                    <div class="character-type-tabs" role="tablist" aria-label="Character types">
+                        <button class="character-type-btn active" data-type="player" role="tab" aria-selected="true">Players</button>
+                        <button class="character-type-btn" data-type="monster" role="tab" aria-selected="false">Monsters</button>
+                        <button class="character-type-btn" data-type="npc" role="tab" aria-selected="false">NPCs</button>
                     </div>
 
                     <!-- Character Management -->
                     <div class="character-management">
-                        <button id="add-character-btn" class="btn btn-primary">Add New Character</button>
-                        <div id="character-list" class="character-list"></div>
+                        <button id="add-character-btn" class="btn btn-primary" aria-label="Add new character to library">Add New Character</button>
+                        <div id="character-list" class="character-list" role="list" aria-label="Character library"></div>
                     </div>
                 </div>
 
                 <!-- Encounter Tab -->
-                <div id="encounter-tab" class="tab-content">
-                    <section class="encounter-players">
-                        <h2>Encounter Participants</h2>
+                <div id="encounter-tab" class="tab-content" role="tabpanel" aria-labelledby="encounter-tab-btn">
+                    <section class="encounter-players" aria-labelledby="encounter-participants-heading">
+                        <h2 id="encounter-participants-heading">Encounter Participants</h2>
                         <div class="encounter-actions">
-                            <button id="load-players-btn" class="btn btn-primary">Load All Players</button>
-                            <button id="add-from-library-btn" class="btn btn-secondary">Add from Library</button>
+                            <button id="load-players-btn" class="btn btn-primary" aria-label="Load all player characters into encounter">Load All Players</button>
+                            <button id="add-from-library-btn" class="btn btn-secondary" aria-label="Add character from library to encounter">Add from Library</button>
                         </div>
-                        <div id="encounter-participant-list" class="encounter-participant-list"></div>
+                        <div id="encounter-participant-list" class="encounter-participant-list" role="list" aria-label="Current encounter participants"></div>
                     </section>
 
-                    <section class="encounter-controls">
-                        <h2>Encounter Controls</h2>
+                    <section class="encounter-controls" aria-labelledby="encounter-controls-heading">
+                        <h2 id="encounter-controls-heading">Encounter Controls</h2>
                         <div class="control-buttons">
-                            <button id="manual-initiative-btn" class="btn btn-primary">Set Initiative</button>
-                            <button id="start-encounter-btn" class="btn btn-success" disabled>Start Encounter</button>
-                            <button id="end-encounter-btn" class="btn btn-danger" disabled>End Encounter</button>
-                            <button id="reset-encounter-btn" class="btn btn-warning">Reset Encounter</button>
+                            <button id="manual-initiative-btn" class="btn btn-primary" aria-label="Manually set initiative values">Set Initiative</button>
+                            <button id="start-encounter-btn" class="btn btn-success" disabled aria-label="Start combat encounter">Start Encounter</button>
+                            <button id="end-encounter-btn" class="btn btn-danger" disabled aria-label="End combat encounter">End Encounter</button>
+                            <button id="reset-encounter-btn" class="btn btn-warning" aria-label="Reset encounter to initial state">Reset Encounter</button>
                         </div>
                     </section>
                 </div>
-            </div>
+            </aside>
 
             <div class="main-panel">
-                <section class="initiative-tracker">
-                    <h2>Initiative Order</h2>
-                    <div class="initiative-controls">
-                        <button id="prev-turn-btn" class="btn btn-secondary" disabled>Previous Turn</button>
-                        <span id="current-turn-info" class="turn-info">Not started</span>
-                        <button id="next-turn-btn" class="btn btn-secondary" disabled>Next Turn</button>
+                <section class="initiative-tracker" aria-labelledby="initiative-heading">
+                    <h2 id="initiative-heading">Initiative Order</h2>
+                    <div class="initiative-controls" role="group" aria-label="Turn navigation">
+                        <button id="prev-turn-btn" class="btn btn-secondary" disabled aria-label="Go to previous turn">Previous Turn</button>
+                        <span id="current-turn-info" class="turn-info" role="status" aria-live="polite">Not started</span>
+                        <button id="next-turn-btn" class="btn btn-secondary" disabled aria-label="Go to next turn">Next Turn</button>
                     </div>
-                    <div id="initiative-list" class="initiative-list"></div>
+                    <ol id="initiative-list" class="initiative-list" aria-label="Initiative order list"></ol>
                 </section>
 
-                <section class="action-tracker">
-                    <h2>Actions & Conditions</h2>
+                <section class="action-tracker" aria-labelledby="actions-heading">
+                    <h2 id="actions-heading">Actions & Conditions</h2>
                     <div id="action-controls" class="action-controls">
-                        <div class="action-buttons">
-                            <button id="add-condition-btn" class="btn btn-warning">Add Condition</button>
-                            <button id="deal-damage-btn" class="btn btn-danger">Deal Damage</button>
-                            <button id="heal-btn" class="btn btn-success">Heal</button>
+                        <div class="action-buttons" role="group" aria-label="Combat actions">
+                            <button id="add-condition-btn" class="btn btn-warning" aria-label="Add condition to current character">Add Condition</button>
+                            <button id="deal-damage-btn" class="btn btn-danger" aria-label="Deal damage to current character">Deal Damage</button>
+                            <button id="heal-btn" class="btn btn-success" aria-label="Heal current character">Heal</button>
                         </div>
-                        <div id="active-conditions" class="conditions-list"></div>
+                        <div id="active-conditions" class="conditions-list" role="list" aria-label="Active conditions on current character"></div>
                     </div>
                 </section>
             </div>
         </main>
 
         <!-- Character Creation Modal -->
-        <div id="character-modal" class="modal">
+        <dialog id="character-modal" class="modal" aria-labelledby="character-modal-title">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 id="modal-title">Add New Character</h2>
-                    <button class="close-modal">&times;</button>
+                    <h2 id="character-modal-title">Add New Character</h2>
+                    <button class="close-modal" aria-label="Close dialog">&times;</button>
                 </div>
                 <form id="character-form" class="character-form">
                     <div class="form-columns">
                         <div class="form-column">
                             <div class="form-group">
                                 <label for="char-name">Name:</label>
-                                <input type="text" id="char-name" name="name" required>
+                                <input type="text" id="char-name" name="name" required aria-required="true">
                             </div>
                             <div class="form-group">
                                 <label for="char-class">Class:</label>
@@ -113,17 +113,18 @@
                             </div>
                             <div class="form-group">
                                 <label for="char-level">Level:</label>
-                                <input type="number" id="char-level" name="level" min="1" max="20" value="1">
+                                <input type="number" id="char-level" name="level" min="1" max="20" value="1" aria-describedby="level-hint">
+                                <span id="level-hint" class="form-hint">1-20</span>
                             </div>
                         </div>
                         <div class="form-column">
                             <div class="form-group">
                                 <label for="char-hp">Hit Points:</label>
-                                <input type="number" id="char-hp" name="hp" min="1" required>
+                                <input type="number" id="char-hp" name="hp" min="1" required aria-required="true">
                             </div>
                             <div class="form-group">
                                 <label for="char-ac">Armor Class:</label>
-                                <input type="number" id="char-ac" name="ac" min="1" required>
+                                <input type="number" id="char-ac" name="ac" min="1" required aria-required="true">
                             </div>
                             <div class="form-group">
                                 <label for="char-speed">Speed:</label>
@@ -136,35 +137,35 @@
                         </div>
                     </div>
 
-                    <div class="stats-section">
-                        <h3>Ability Scores</h3>
+                    <fieldset class="stats-section">
+                        <legend>Ability Scores</legend>
                         <div class="ability-scores">
                             <div class="ability-score">
                                 <label for="char-str">STR:</label>
-                                <input type="number" id="char-str" name="strength" min="1" max="20" value="10">
+                                <input type="number" id="char-str" name="strength" min="1" max="30" value="10">
                             </div>
                             <div class="ability-score">
                                 <label for="char-dex">DEX:</label>
-                                <input type="number" id="char-dex" name="dexterity" min="1" max="20" value="10">
+                                <input type="number" id="char-dex" name="dexterity" min="1" max="30" value="10">
                             </div>
                             <div class="ability-score">
                                 <label for="char-con">CON:</label>
-                                <input type="number" id="char-con" name="constitution" min="1" max="20" value="10">
+                                <input type="number" id="char-con" name="constitution" min="1" max="30" value="10">
                             </div>
                             <div class="ability-score">
                                 <label for="char-int">INT:</label>
-                                <input type="number" id="char-int" name="intelligence" min="1" max="20" value="10">
+                                <input type="number" id="char-int" name="intelligence" min="1" max="30" value="10">
                             </div>
                             <div class="ability-score">
                                 <label for="char-wis">WIS:</label>
-                                <input type="number" id="char-wis" name="wisdom" min="1" max="20" value="10">
+                                <input type="number" id="char-wis" name="wisdom" min="1" max="30" value="10">
                             </div>
                             <div class="ability-score">
                                 <label for="char-cha">CHA:</label>
-                                <input type="number" id="char-cha" name="charisma" min="1" max="20" value="10">
+                                <input type="number" id="char-cha" name="charisma" min="1" max="30" value="10">
                             </div>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <div class="form-columns">
                         <div class="form-column">
@@ -187,31 +188,41 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </dialog>
 
         <!-- Library Selection Modal -->
-        <div id="library-modal" class="modal">
+        <dialog id="library-modal" class="modal" aria-labelledby="library-modal-title">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Add from Character Library</h2>
-                    <button class="close-modal">&times;</button>
+                    <h2 id="library-modal-title">Add from Character Library</h2>
+                    <button class="close-modal" aria-label="Close dialog">&times;</button>
                 </div>
-                <div class="library-tabs">
-                    <button class="library-tab-btn active" data-type="player">Players</button>
-                    <button class="library-tab-btn" data-type="monster">Monsters</button>
-                    <button class="library-tab-btn" data-type="npc">NPCs</button>
+                <div class="library-tabs" role="tablist" aria-label="Character library types">
+                    <button class="library-tab-btn active" data-type="player" role="tab" aria-selected="true">Players</button>
+                    <button class="library-tab-btn" data-type="monster" role="tab" aria-selected="false">Monsters</button>
+                    <button class="library-tab-btn" data-type="npc" role="tab" aria-selected="false">NPCs</button>
                 </div>
-                <div id="library-character-list" class="library-character-list"></div>
+                <div id="library-character-list" class="library-character-list" role="list" aria-label="Available characters"></div>
             </div>
-        </div>
+        </dialog>
     </div>
 
+    <!-- Utility scripts (no dependencies) -->
+    <script src="js/utils/DOMHelpers.js"></script>
+    <script src="js/components/ModalManager.js"></script>
+
+    <!-- Base class (no dependencies) -->
+    <script src="js/classes/BaseCharacter.js"></script>
+
+    <!-- Classes (depend on BaseCharacter) -->
     <script src="js/classes/Character.js"></script>
     <script src="js/classes/CharacterLibrary.js"></script>
     <script src="js/classes/Player.js"></script>
     <script src="js/classes/Initiative.js"></script>
     <script src="js/classes/Encounter.js"></script>
     <script src="js/classes/Game.js"></script>
+
+    <!-- Main application (depends on all above) -->
     <script src="js/main.js"></script>
 </body>
 </html>

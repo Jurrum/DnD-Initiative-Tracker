@@ -1,0 +1,24 @@
+{
+  "name": "dnd-initiative-tracker",
+  "version": "1.0.0",
+  "description": "D&D Initiative Tracker - A web-based combat and initiative management tool",
+  "main": "js/main.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "dnd",
+    "dungeons-and-dragons",
+    "initiative",
+    "tracker",
+    "combat"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

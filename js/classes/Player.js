@@ -1,110 +1,55 @@
-class Player {
+/**
+ * Player - Lightweight character representation for use in encounters
+ * Extends BaseCharacter with encounter-specific functionality
+ */
+class Player extends BaseCharacter {
     constructor(name, hp, ac, initiativeModifier = 0, type = 'player') {
-        this.id = this.generateId();
-        this.name = name;
-        this.maxHp = hp;
-        this.currentHp = hp;
-        this.ac = ac;
-        this.initiativeModifier = initiativeModifier;
-        this.type = type;
-        this.initiative = 0;
-        this.conditions = [];
-        this.actions = [];
-        this.isAlive = true;
-        this.notes = '';
+        super(name, type);
+
+        // Override defaults with provided values
+        const validHp = parseInt(hp, 10);
+        const validAc = parseInt(ac, 10);
+        const validInitMod = parseInt(initiativeModifier, 10);
+
+        this.maxHp = isNaN(validHp) || validHp < 1 ? 1 : validHp;
+        this.currentHp = this.maxHp;
+        this.ac = isNaN(validAc) || validAc < 0 ? 10 : validAc;
+        this.initiativeModifier = isNaN(validInitMod) ? 0 : validInitMod;
+
+        // Generate player-specific ID
+        this.id = this.generateId('player');
     }
 
-    generateId() {
-        return 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    rollInitiative() {
-        const roll = Math.floor(Math.random() * 20) + 1;
-        this.initiative = roll + this.initiativeModifier;
-        return this.initiative;
-    }
-
-    takeDamage(amount) {
-        this.currentHp = Math.max(0, this.currentHp - amount);
-        if (this.currentHp === 0) {
-            this.isAlive = false;
-            this.addCondition('unconscious', -1);
-        }
-        return this.currentHp;
-    }
-
-    heal(amount) {
-        this.currentHp = Math.min(this.maxHp, this.currentHp + amount);
-        if (this.currentHp > 0 && !this.isAlive) {
-            this.isAlive = true;
-            this.removeCondition('unconscious');
-        }
-        return this.currentHp;
-    }
-
-    addCondition(name, duration = -1, description = '') {
-        const condition = {
-            id: this.generateId(),
-            name: name,
-            duration: duration,
-            description: description,
-            appliedTurn: 0
-        };
-        this.conditions.push(condition);
-        return condition;
-    }
-
-    removeCondition(name) {
-        this.conditions = this.conditions.filter(condition => condition.name !== name);
-    }
-
-    updateConditions() {
-        this.conditions = this.conditions.filter(condition => {
-            if (condition.duration === -1) return true;
-            condition.duration--;
-            return condition.duration > 0;
-        });
-    }
-
-    addAction(action) {
-        const actionEntry = {
-            id: this.generateId(),
-            action: action,
-            turn: 0,
-            timestamp: new Date().toISOString()
-        };
-        this.actions.push(actionEntry);
-        return actionEntry;
-    }
-
-    getHpPercentage() {
-        return (this.currentHp / this.maxHp) * 100;
-    }
-
-    getStatusColor() {
-        const hpPercent = this.getHpPercentage();
-        if (hpPercent <= 0) return '#dc3545';
-        if (hpPercent <= 25) return '#dc3545';
-        if (hpPercent <= 50) return '#ffc107';
-        if (hpPercent <= 75) return '#fd7e14';
-        return '#28a745';
-    }
-
-    hasCondition(conditionName) {
-        return this.conditions.some(condition => condition.name === conditionName);
-    }
-
+    /**
+     * Create a clone of this player
+     * @returns {Player} A new Player instance with copied data
+     */
     clone() {
-        const clone = new Player(this.name, this.maxHp, this.ac, this.initiativeModifier, this.type);
+        const clone = new Player(
+            this.name,
+            this.maxHp,
+            this.ac,
+            this.initiativeModifier,
+            this.type
+        );
+
+        // Copy state
         clone.currentHp = this.currentHp;
         clone.initiative = this.initiative;
-        clone.conditions = [...this.conditions];
-        clone.actions = [...this.actions];
         clone.isAlive = this.isAlive;
         clone.notes = this.notes;
+
+        // Deep copy arrays (fixed: was shallow copy before)
+        clone.conditions = this._cloneConditions();
+        clone.actions = this._cloneActions();
+
         return clone;
     }
 
+    /**
+     * Serialize player to JSON
+     * @returns {Object} JSON-serializable object
+     */
     toJSON() {
         return {
             id: this.id,
@@ -122,15 +67,40 @@ class Player {
         };
     }
 
+    /**
+     * Create a Player instance from JSON data
+     * @param {Object} data - JSON data
+     * @returns {Player} New Player instance
+     */
     static fromJSON(data) {
-        const player = new Player(data.name, data.maxHp, data.ac, data.initiativeModifier, data.type);
-        player.id = data.id;
-        player.currentHp = data.currentHp;
-        player.initiative = data.initiative;
-        player.conditions = data.conditions || [];
-        player.actions = data.actions || [];
-        player.isAlive = data.isAlive;
+        if (!data) {
+            throw new Error('Cannot create Player from null/undefined data');
+        }
+
+        const player = new Player(
+            data.name || 'Unknown',
+            data.maxHp || 10,
+            data.ac || 10,
+            data.initiativeModifier || 0,
+            data.type || 'player'
+        );
+
+        // Restore state
+        player.id = data.id || player.id;
+        player.currentHp = data.currentHp !== undefined ? data.currentHp : player.maxHp;
+        player.initiative = data.initiative || 0;
+        player.isAlive = data.isAlive !== undefined ? data.isAlive : true;
         player.notes = data.notes || '';
+
+        // Restore arrays with validation
+        player.conditions = Array.isArray(data.conditions) ? data.conditions : [];
+        player.actions = Array.isArray(data.actions) ? data.actions : [];
+
         return player;
     }
+}
+
+// Export for use in other modules (if using ES modules)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Player;
 }
