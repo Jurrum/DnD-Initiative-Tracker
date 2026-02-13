@@ -1,0 +1,2476 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daan de Pyromaan — Character Sheet</title>
+<style>
+/* ========================================
+   Design Tokens
+   ======================================== */
+:root {
+    --bg-dark: #121418;
+    --bg-medium: #1e2128;
+    --bg-light: #282c34;
+    --bg-lighter: #363b44;
+    --bg-hover: #3a3f4a;
+    --bg-card: #252930;
+    --text-primary: #f0f0f0;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --text-dark: #1a1a1a;
+    --border-color: #3a3f4a;
+    --border-light: #454b55;
+    --fire-primary: #ff6b35;
+    --fire-secondary: #ffa62b;
+    --fire-dim: #cc5500;
+    --fire-glow: rgba(255, 107, 53, 0.3);
+    --fire-glow-strong: rgba(255, 107, 53, 0.5);
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
+    --color-sorcerer: #9b59b6;
+    --color-draconic: #e74c3c;
+    --color-racial: #e67e22;
+    --hp-healthy: #22c55e;
+    --hp-injured: #84cc16;
+    --hp-wounded: #eab308;
+    --hp-critical: #f97316;
+    --hp-dead: #ef4444;
+    --spacing-xs: 6px;
+    --spacing-sm: 10px;
+    --spacing-md: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 32px;
+    --radius-sm: 5px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+}
+
+/* ========================================
+   Reset & Base
+   ======================================== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 20px; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ========================================
+   Grid Layout
+   ======================================== */
+.sheet {
+    display: grid;
+    grid-template: "header header" auto
+                   "sidebar main" 1fr
+                   "footer footer" auto / 280px 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ========================================
+   Header
+   ======================================== */
+.header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-medium);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    min-height: 60px;
+}
+.header-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+.portrait {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--fire-primary);
+    object-fit: cover;
+    box-shadow: 0 0 8px var(--fire-glow);
+}
+.header-name { font-weight: 700; font-size: 1.15rem; color: var(--fire-primary); }
+.header-sub { font-size: 0.9rem; color: var(--text-secondary); }
+
+.header-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
+}
+.stat-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    min-width: 60px;
+    cursor: default;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+.stat-badge .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+.stat-badge .value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.stat-badge.clickable { cursor: pointer; }
+.stat-badge.clickable:hover { border-color: var(--fire-primary); }
+.stat-badge.active {
+    border-color: var(--fire-primary);
+    box-shadow: 0 0 12px var(--fire-glow);
+    background: rgba(255, 107, 53, 0.1);
+}
+.stat-badge.active .value { color: var(--fire-primary); }
+
+/* HP Badge */
+.hp-badge {
+    min-width: 140px;
+    position: relative;
+}
+.hp-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+.hp-current { font-size: 1.2rem; font-weight: 700; }
+.hp-separator { color: var(--text-muted); font-size: 1rem; }
+.hp-max { font-size: 1rem; color: var(--text-secondary); }
+.hp-temp { font-size: 0.85rem; color: #60a5fa; margin-left: 4px; }
+.hp-bar-mini {
+    width: 100%; height: 4px;
+    background: var(--bg-dark);
+    border-radius: 2px;
+    margin-top: 3px;
+    overflow: hidden;
+}
+.hp-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width var(--transition-normal), background var(--transition-normal);
+}
+.hp-controls {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+}
+.hp-controls.show { display: flex; }
+.hp-controls input {
+    width: 52px;
+    padding: 4px 6px;
+    text-align: center;
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+.hp-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+.hp-btn.heal { background: var(--color-success); color: white; }
+.hp-btn.dmg { background: var(--color-danger); color: white; }
+.hp-btn.temp { background: #3b82f6; color: white; }
+.hp-btn:hover { filter: brightness(1.2); }
+
+/* ========================================
+   Sidebar
+   ======================================== */
+.sidebar {
+    grid-area: sidebar;
+    background: var(--bg-medium);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.sidebar-section h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--fire-primary);
+    margin-bottom: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+.ability-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+.ability-box {
+    background: var(--bg-light);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    text-align: center;
+}
+.ability-box .ab-name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+.ability-box .ab-mod {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.ability-box .ab-score {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.ability-box .ab-save {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.ability-box .ab-save.prof {
+    color: var(--fire-primary);
+    font-weight: 600;
+}
+.skill-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 6px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+}
+.skill-item:nth-child(odd) { background: var(--bg-light); }
+.skill-item .skill-name { color: var(--text-secondary); }
+.skill-item .skill-val { font-weight: 600; color: var(--text-primary); }
+
+.feat-card {
+    background: var(--bg-light);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm) var(--spacing-sm);
+    margin-bottom: 5px;
+    border-left: 3px solid var(--fire-primary);
+}
+.feat-card .feat-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.feat-card .feat-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 1px;
+}
+.tool-item {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 1px 0;
+}
+
+/* ========================================
+   Main Panel
+   ======================================== */
+.main-area {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.main-tabs {
+    display: flex;
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.main-tab-btn {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+.main-tab-btn:hover { color: var(--text-primary); background: var(--bg-lighter); }
+.main-tab-btn.active { color: var(--fire-primary); background: var(--bg-medium); }
+.main-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--fire-primary);
+}
+.tab-panel {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+}
+.tab-panel.active { display: block; }
+
+/* ========================================
+   Spells Tab
+   ======================================== */
+.metamagic-bar {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--bg-light);
+    border-radius: var(--radius-lg);
+}
+.metamagic-badge {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    border: 2px solid var(--color-sorcerer);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-sorcerer);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    user-select: none;
+}
+.metamagic-badge:hover {
+    background: rgba(155, 89, 182, 0.15);
+}
+.metamagic-badge.open {
+    background: rgba(155, 89, 182, 0.2);
+    box-shadow: 0 0 12px rgba(155, 89, 182, 0.4);
+}
+.metamagic-badge .mm-cost {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 4px;
+}
+.metamagic-badge .tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background: var(--bg-medium);
+    border: 2px solid var(--color-sorcerer);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1.6;
+    white-space: normal;
+    width: 300px;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(155, 89, 182, 0.2);
+}
+.metamagic-badge .tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 20px;
+    border: 8px solid transparent;
+    border-bottom-color: var(--color-sorcerer);
+}
+.metamagic-badge.open .tooltip { display: block; }
+
+.spell-sub-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+.spell-sub-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all var(--transition-fast);
+}
+.spell-sub-btn:hover { border-color: var(--fire-primary); color: var(--text-primary); }
+.spell-sub-btn.active { background: var(--fire-primary); color: var(--text-dark); border-color: var(--fire-primary); }
+.spell-sub-btn .count {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+.spell-list { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+.spell-group { display: none; }
+.spell-group.active { display: block; }
+
+.spell-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-sorcerer);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.spell-card.draconic { border-left-color: var(--color-draconic); }
+.spell-card.racial { border-left-color: var(--color-racial); }
+.spell-card:hover { background: var(--bg-hover); }
+
+.spell-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+.spell-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex: 1;
+}
+.spell-tags {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+.spell-tag {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.spell-tag.damage { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.spell-tag.range { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.spell-tag.conc { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+.spell-tag.type { background: rgba(156, 163, 175, 0.15); color: var(--text-secondary); }
+.spell-tag.action { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; }
+.spell-tag.source-sorc { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+.spell-tag.source-drac { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+.spell-tag.source-racial { background: rgba(230, 126, 34, 0.2); color: #e67e22; }
+
+.spell-details {
+    display: none;
+    padding: 0 var(--spacing-md) var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
+    margin-top: 0;
+}
+.spell-card.expanded .spell-details { display: block; padding-top: var(--spacing-sm); }
+.spell-details p { margin-bottom: var(--spacing-xs); }
+.spell-details strong { color: var(--text-primary); }
+
+/* ========================================
+   Gevecht Tab
+   ======================================== */
+.combat-plan { margin-bottom: var(--spacing-lg); }
+.combat-plan h3 {
+    font-size: 1rem;
+    color: var(--fire-primary);
+    margin-bottom: var(--spacing-md);
+}
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.timeline-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--fire-primary);
+}
+.timeline-round {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--fire-primary);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+.timeline-actions { flex: 1; }
+.timeline-actions .action-line {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+.action-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-right: 6px;
+}
+.action-badge.action { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; }
+.action-badge.bonus { background: rgba(255, 166, 43, 0.2); color: var(--fire-secondary); }
+.action-badge.reaction { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+
+.combo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--spacing-sm);
+}
+.combo-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+.combo-card:hover {
+    border-color: var(--fire-primary);
+    box-shadow: 0 0 12px var(--fire-glow);
+}
+.combo-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--fire-primary);
+    margin-bottom: var(--spacing-xs);
+}
+.combo-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   Klasse & Ras Tab
+   ======================================== */
+.feature-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    border-left: 3px solid var(--fire-primary);
+    overflow: hidden;
+}
+.feature-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+.feature-header:hover { background: var(--bg-hover); }
+.feature-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.feature-level {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.feature-chevron {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+.feature-card.expanded .feature-chevron { transform: rotate(90deg); }
+.feature-body {
+    display: none;
+    padding: 0 var(--spacing-md) var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
+}
+.feature-card.expanded .feature-body { display: block; padding-top: var(--spacing-sm); }
+.feature-body ul { padding-left: var(--spacing-lg); margin: var(--spacing-xs) 0; }
+.feature-body li { margin-bottom: 2px; }
+
+.section-title {
+    font-size: 1rem;
+    color: var(--fire-primary);
+    margin: var(--spacing-md) 0 var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+.section-title:first-child { margin-top: 0; }
+
+/* ========================================
+   Info Tab
+   ======================================== */
+.info-section {
+    margin-bottom: var(--spacing-lg);
+}
+.info-section h3 {
+    font-size: 1rem;
+    color: var(--fire-primary);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px var(--spacing-md);
+    font-size: 0.9rem;
+}
+.info-grid dt { color: var(--text-muted); font-weight: 600; }
+.info-grid dd { color: var(--text-primary); }
+.personality-item {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    border-left: 3px solid var(--fire-dim);
+}
+.personality-item .p-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+.personality-item .p-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-style: italic;
+}
+.backstory-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.backstory-text p { margin-bottom: var(--spacing-sm); }
+.equipment-table {
+    width: 100%;
+    font-size: 0.9rem;
+    border-collapse: collapse;
+}
+.equipment-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+.equipment-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(58, 63, 74, 0.4);
+}
+.equipment-table tr:hover td { color: var(--text-primary); }
+.dm-notes {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.dm-notes li { margin-bottom: var(--spacing-xs); }
+
+/* ========================================
+   Footer (Resource Trackers)
+   ======================================== */
+.footer {
+    grid-area: footer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-medium);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    min-height: 54px;
+}
+.resource-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+.resource-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-right: 2px;
+    white-space: nowrap;
+}
+.resource-dots {
+    display: flex;
+    gap: 5px;
+}
+.dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--fire-primary);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.dot.filled {
+    background: var(--fire-primary);
+    box-shadow: 0 0 6px var(--fire-glow);
+}
+.dot:hover { border-color: var(--fire-secondary); transform: scale(1.15); }
+.dot.slot-1 { border-color: #60a5fa; }
+.dot.slot-1.filled { background: #60a5fa; box-shadow: 0 0 6px rgba(96, 165, 250, 0.4); }
+.dot.slot-2 { border-color: #a78bfa; }
+.dot.slot-2.filled { background: #a78bfa; box-shadow: 0 0 6px rgba(167, 139, 250, 0.4); }
+.dot.slot-3 { border-color: #f472b6; }
+.dot.slot-3.filled { background: #f472b6; box-shadow: 0 0 6px rgba(244, 114, 182, 0.4); }
+.dot.innate { border-color: var(--color-sorcerer); }
+.dot.innate.filled { background: var(--color-sorcerer); box-shadow: 0 0 6px rgba(155, 89, 182, 0.4); }
+.dot.racial-dot { border-color: var(--color-racial); }
+.dot.racial-dot.filled { background: var(--color-racial); box-shadow: 0 0 6px rgba(230, 126, 34, 0.4); }
+.dot.hd { border-color: var(--color-success); }
+.dot.hd.filled { background: var(--color-success); box-shadow: 0 0 6px rgba(40, 167, 69, 0.3); }
+
+.rest-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-left: auto;
+}
+.rest-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-light);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+.rest-btn:hover { border-color: var(--fire-primary); color: var(--text-primary); }
+.rest-btn.long:hover { border-color: var(--color-success); color: var(--color-success); }
+
+.resource-separator {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+/* ========================================
+   Scrollbar
+   ======================================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ========================================
+   Stats Tab
+   ======================================== */
+.stats-table {
+    width: 100%;
+    font-size: 0.9rem;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+}
+.stats-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+.stats-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(58, 63, 74, 0.4);
+}
+.stats-table td:first-child { font-weight: 600; color: var(--text-primary); }
+.stats-table tr:hover td { color: var(--text-primary); }
+.stats-table .prof-row td:last-child { color: var(--fire-primary); font-weight: 600; }
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacing-md);
+}
+.skills-group-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--fire-primary);
+    margin-top: var(--spacing-sm);
+    margin-bottom: 2px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--border-color);
+}
+.skills-column .skills-group-label:first-child { margin-top: 0; }
+.skills-list {
+    margin-bottom: var(--spacing-xs);
+}
+.skill-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px var(--spacing-sm);
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+}
+.skill-row:nth-child(odd) { background: var(--bg-light); }
+.skill-row-name { color: var(--text-secondary); }
+.skill-row-val { font-weight: 600; color: var(--text-primary); }
+.skill-row.prof .skill-row-name { color: var(--fire-primary); font-weight: 600; }
+.skill-row.prof .skill-row-val { color: var(--fire-primary); }
+
+.prof-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.prof-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.9rem;
+    background: var(--bg-light);
+    border-radius: var(--radius-sm);
+}
+.prof-label {
+    color: var(--text-muted);
+    font-weight: 600;
+    min-width: 80px;
+}
+
+/* ========================================
+   Cast / Use Buttons
+   ======================================== */
+.cast-btn {
+    padding: 2px 10px;
+    border: 1px solid var(--fire-primary);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--fire-primary);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.cast-btn:hover {
+    background: rgba(255, 107, 53, 0.15);
+    box-shadow: 0 0 8px var(--fire-glow);
+}
+.metamagic-use-btn {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border: 1px solid var(--color-sorcerer);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-sorcerer);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+.metamagic-use-btn:hover {
+    background: rgba(155, 89, 182, 0.2);
+    box-shadow: 0 0 8px rgba(155, 89, 182, 0.4);
+}
+.feature-use-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--fire-primary);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--fire-primary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    margin: 4px 2px;
+}
+.feature-use-btn:hover {
+    background: rgba(255, 107, 53, 0.15);
+    box-shadow: 0 0 8px var(--fire-glow);
+}
+.cast-btn.disabled,
+.metamagic-use-btn.disabled,
+.feature-use-btn.disabled {
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.cast-btn.disabled:hover,
+.metamagic-use-btn.disabled:hover,
+.feature-use-btn.disabled:hover {
+    background: transparent;
+    box-shadow: none;
+}
+@keyframes castFlash {
+    0% { background: rgba(40, 167, 69, 0.4); color: #28a745; border-color: #28a745; }
+    100% { background: transparent; color: var(--fire-primary); border-color: var(--fire-primary); }
+}
+@keyframes castFail {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-3px); }
+    40%, 80% { transform: translateX(3px); }
+}
+.cast-btn.flash,
+.metamagic-use-btn.flash,
+.feature-use-btn.flash {
+    animation: castFlash 0.6s ease;
+}
+.cast-btn.fail,
+.metamagic-use-btn.fail,
+.feature-use-btn.fail {
+    animation: castFail 0.4s ease;
+    border-color: var(--color-danger) !important;
+    color: var(--color-danger) !important;
+}
+.fom-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+    <!-- ==================== HEADER ==================== -->
+    <header class="header">
+        <div class="header-identity">
+            <img src="DaanPyromaan.png" alt="Daan" class="portrait" onerror="this.style.display='none'">
+            <div>
+                <div class="header-name">Daan de Pyromaan</div>
+                <div class="header-sub">Fire Genasi Sorcerer 5</div>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat-badge hp-badge clickable" id="hp-badge" title="Klik om HP aan te passen">
+                <span class="label">HP</span>
+                <div class="hp-display">
+                    <span class="hp-current" id="hp-current">37</span>
+                    <span class="hp-separator">/</span>
+                    <span class="hp-max">37</span>
+                    <span class="hp-temp" id="hp-temp"></span>
+                </div>
+                <div class="hp-bar-mini"><div class="hp-bar-fill" id="hp-bar"></div></div>
+                <div class="hp-controls" id="hp-controls">
+                    <input type="number" id="hp-input" value="1" min="1">
+                    <button class="hp-btn heal" onclick="changeHP(1)">+</button>
+                    <button class="hp-btn dmg" onclick="changeHP(-1)">-</button>
+                    <button class="hp-btn temp" onclick="addTempHP()">T</button>
+                </div>
+            </div>
+            <div class="stat-badge clickable" id="ac-badge" title="Klik voor Shield toggle" onclick="toggleShield()">
+                <span class="label">AC</span>
+                <span class="value" id="ac-value">17</span>
+            </div>
+            <div class="stat-badge">
+                <span class="label">Init</span>
+                <span class="value">+6</span>
+            </div>
+            <div class="stat-badge">
+                <span class="label">Speed</span>
+                <span class="value">30 ft</span>
+            </div>
+            <div class="stat-badge clickable" id="dc-badge" title="Klik voor Innate Sorcery toggle" onclick="toggleInnateSorcery()">
+                <span class="label">DC</span>
+                <span class="value" id="dc-value">15</span>
+            </div>
+            <div class="stat-badge" id="spa-badge">
+                <span class="label">Spell Atk</span>
+                <span class="value" id="spa-value">+7</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3>Ability Scores</h3>
+            <div class="ability-grid">
+                <div class="ability-box">
+                    <div class="ab-name">STR</div>
+                    <div class="ab-mod">-1</div>
+                    <div class="ab-score">8</div>
+                    <div class="ab-save">Save -1</div>
+                </div>
+                <div class="ability-box">
+                    <div class="ab-name">DEX</div>
+                    <div class="ab-mod">+3</div>
+                    <div class="ab-score">16</div>
+                    <div class="ab-save">Save +3</div>
+                </div>
+                <div class="ability-box">
+                    <div class="ab-name">CON</div>
+                    <div class="ab-mod">+2</div>
+                    <div class="ab-score">15</div>
+                    <div class="ab-save prof">Save +5 ★</div>
+                </div>
+                <div class="ability-box">
+                    <div class="ab-name">INT</div>
+                    <div class="ab-mod">-1</div>
+                    <div class="ab-score">8</div>
+                    <div class="ab-save">Save -1</div>
+                </div>
+                <div class="ability-box">
+                    <div class="ab-name">WIS</div>
+                    <div class="ab-mod">-1</div>
+                    <div class="ab-score">8</div>
+                    <div class="ab-save">Save -1</div>
+                </div>
+                <div class="ability-box">
+                    <div class="ab-name">CHA</div>
+                    <div class="ab-mod">+4</div>
+                    <div class="ab-score">18</div>
+                    <div class="ab-save prof">Save +7 ★</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Skills</h3>
+            <div class="skill-item"><span class="skill-name">Acrobatics</span><span class="skill-val">+6</span></div>
+            <div class="skill-item"><span class="skill-name">Deception</span><span class="skill-val">+7</span></div>
+            <div class="skill-item"><span class="skill-name">Perception</span><span class="skill-val">+2</span></div>
+            <div class="skill-item"><span class="skill-name">Persuasion</span><span class="skill-val">+7</span></div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Feats</h3>
+            <div class="feat-card">
+                <div class="feat-name">Alert</div>
+                <div class="feat-desc">+Prof to Initiative. Swap initiative met bondgenoot.</div>
+            </div>
+            <div class="feat-card">
+                <div class="feat-name">Elemental Adept (Fire)</div>
+                <div class="feat-desc">Negeer Fire Resistance. 1's op fire dice → 2. +1 CHA.</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Tools & Talen</h3>
+            <div class="tool-item">Navigator's Tools</div>
+            <div class="tool-item">Water Vehicles</div>
+            <div class="tool-item">Common, Primordial</div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Zwakheden</h3>
+            <div class="feat-card" style="border-left-color: var(--color-danger)">
+                <div class="feat-desc">WIS save -1 (charm, fear, illusions)</div>
+            </div>
+            <div class="feat-card" style="border-left-color: var(--color-danger)">
+                <div class="feat-desc">INT -1 (Investigation, denkt niet na)</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN AREA ==================== -->
+    <div class="main-area">
+        <div class="main-tabs">
+            <button class="main-tab-btn active" data-tab="stats">Stats</button>
+            <button class="main-tab-btn" data-tab="spreuken">Spreuken</button>
+            <button class="main-tab-btn" data-tab="gevecht">Gevecht</button>
+            <button class="main-tab-btn" data-tab="klasse">Klasse & Ras</button>
+            <button class="main-tab-btn" data-tab="info">Info</button>
+        </div>
+
+        <!-- ===== TAB: SPREUKEN ===== -->
+        <div class="tab-panel" id="tab-spreuken">
+            <div class="metamagic-bar">
+                <div class="metamagic-badge" onclick="toggleMetamagic(this)">
+                    Careful Spell <span class="mm-cost">1 SP</span>
+                    <button class="metamagic-use-btn" onclick="useMetamagic(event)">Gebruik</button>
+                    <div class="tooltip">Bescherm tot 4 bondgenoten tegen jouw AoE — ze slagen automatisch en nemen geen halve schade.</div>
+                </div>
+                <div class="metamagic-badge" onclick="toggleMetamagic(this)">
+                    Empowered Spell <span class="mm-cost">1 SP</span>
+                    <button class="metamagic-use-btn" onclick="useMetamagic(event)">Gebruik</button>
+                    <div class="tooltip">Hergooi tot 4 damage dice. Combineerbaar met andere Metamagic!</div>
+                </div>
+            </div>
+
+            <div class="spell-sub-tabs" id="spell-sub-tabs">
+                <button class="spell-sub-btn active" data-group="cantrips">Cantrips <span class="count">6</span></button>
+                <button class="spell-sub-btn" data-group="level1">Level 1 <span class="count">3</span></button>
+                <button class="spell-sub-btn" data-group="level2">Level 2 <span class="count">3</span></button>
+                <button class="spell-sub-btn" data-group="level3">Level 3 <span class="count">3</span></button>
+                <button class="spell-sub-btn" data-group="draconic">Draconic <span class="count">6</span></button>
+                <button class="spell-sub-btn" data-group="racial">Racial <span class="count">3</span></button>
+            </div>
+
+            <!-- Cantrips -->
+            <div class="spell-group active" id="group-cantrips">
+                <div class="spell-card" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Fire Bolt</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">2d10 fire</span>
+                            <span class="spell-tag range">120 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 120 ft | <strong>Components:</strong> V, S | <strong>Duration:</strong> Instantaneous</p>
+                        <p><strong>Ranged spell attack</strong> (+7, of +7 met Advantage bij Innate Sorcery). Bij hit: <strong>2d10 fire damage</strong>. Ontvlambare objecten die niet gedragen worden vatten vlam.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan's vingertoppen gloeien op, een felle vonk schiet als een komeetstaart naar het doelwit — gevolgd door een dof 'whump' bij impact.</p>
+                        <p><strong>Tip:</strong> Hoogste betrouwbare cantrip damage (gem. 11). Met Elemental Adept worden 1's op dice 2's (min. 4 damage). Kan crits scoren (4d10). Langste range van al je cantrips.</p>
+                    </div>
+                </div>
+                <div class="spell-card" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Sorcerous Burst</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">2d8 fire</span>
+                            <span class="spell-tag range">120 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 120 ft | <strong>Components:</strong> V, S | <strong>Duration:</strong> Instantaneous</p>
+                        <p><strong>Ranged spell attack</strong> (+7). Bij hit: <strong>2d8 fire damage</strong> (kies damage type bij casten: Acid/Cold/Fire/Lightning/Poison/Thunder). <strong>Exploding dice:</strong> als je het hoogste getal gooit op een d8 (een 8), mag je die d8 opnieuw gooien en optellen. Dit mag max 4 keer (CHA mod) per cast.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Ruwe, onstabiele magie welt op vanuit Daan's drakenbloed — een pulserende bol van chaotische energie die bij impact uiteenspat in een cascade van vonken.</p>
+                        <p><strong>Tip:</strong> Lager gemiddelde dan Fire Bolt (10.3 vs 11), maar met een veel hoger plafond: theoretisch max 6d8 = 48 damage. Sorcerer-exclusief. Met Empowered Spell hergooi je lage dice en nieuwe 8's triggeren opnieuw explosions.</p>
+                    </div>
+                </div>
+                <div class="spell-card" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Prestidigitation</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag type">Utility</span>
+                            <span class="spell-tag range">10 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 10 ft | <strong>Components:</strong> V, S | <strong>Duration:</strong> Tot 1 uur</p>
+                        <p>Creëer een van de volgende magische effecten: <strong>(1)</strong> Onschadelijk sensorisch effect (vonken, rookpluim, geur, geluid) in een 5-ft kubus. <strong>(2)</strong> Steek een kaars, fakkel of kampvuur aan of doof het. <strong>(3)</strong> Maak een object (max 1 kubieke voet) schoon of vuil. <strong>(4)</strong> Verwarm, verkoel of verander de smaak van 1 kubieke voet niet-levend materiaal (1 uur). <strong>(5)</strong> Maak een kleur, markering of symbool op een oppervlak (1 uur). <strong>(6)</strong> Creëer een niet-magisch prulletje of mini-illusie in je hand (tot eind volgende beurt). Max 3 effecten tegelijk actief. Dismiss als Bonus Action.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan's go-to voor alles. Vlammetjes dansen tussen zijn vingers, rook kringelt uit zijn neus, alles ruikt naar kampvuur. Hij verwarmt zijn eten, laat schroeiplekken achter op tafels en creëert miniatuur vuurwerkshows.</p>
+                    </div>
+                </div>
+                <div class="spell-card" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Minor Illusion</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag type">Utility</span>
+                            <span class="spell-tag range">30 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 30 ft | <strong>Components:</strong> S, M (een stukje wol) | <strong>Duration:</strong> 1 minuut</p>
+                        <p>Creëer een <strong>geluid</strong> (fluistering tot schreeuw, continu of herhaald) <strong>of</strong> een <strong>beeld</strong> van een object (max 5-ft kubus, geen geluid/licht/geur, verdwijnt bij fysiek contact). Creature kan als actie een <strong>Investigation check (DC 15/16)</strong> doen — bij succes wordt de illusie vaag maar niet weg. Geen Verbal component — je cast het <strong>stil</strong>!</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan creëert het geluid van naderende wachters, het beeld van een gesloten deur, of een vals piraten-signatuur op een contract. Perfecte bluf-tool voor iemand met +7 Deception.</p>
+                        <p><strong>Tip:</strong> Geen V-component = stil casten! Ideaal voor afleiding. Het beeld beweegt niet en geeft geen licht. Combineer met Deception (+7) voor overtuigende listen.</p>
+                    </div>
+                </div>
+                <div class="spell-card" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Mind Sliver</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">2d6 psychic</span>
+                            <span class="spell-tag range">60 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 60 ft | <strong>Components:</strong> V | <strong>Save:</strong> INT (DC 15/16) | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Target maakt een <strong>Intelligence saving throw</strong>. Bij falen: <strong>2d6 psychic damage</strong> EN het trekt <strong>-1d4 af van zijn volgende saving throw</strong> (voor einde van jouw volgende beurt). Psychic damage wordt bijna nooit weerstaan — vrijwel geen monsters hebben psychic resistance.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Een onzichtbare naald van psychische energie boort zich in het bewustzijn van het doelwit. Het wankelt, gedesoriënteerd, terwijl zijn gedachten even uiteenvallen als rook in de wind.</p>
+                        <p><strong>De Setup-combo:</strong> Ronde 1 Mind Sliver → Ronde 2 Fireball. Target trekt 1d4 af van zijn DEX save tegen Fireball = significant meer kans op volle damage. Alleen V-component (geen handen nodig). Target INT saves — beesten, undead en veel fiends hebben lage INT.</p>
+                    </div>
+                </div>
+                <div class="spell-card racial" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Produce Flame</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">2d8 fire</span>
+                            <span class="spell-tag range">30 ft</span>
+                            <span class="spell-tag source-racial">Racial</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Bonus Action | <strong>Range:</strong> Self / 30 ft (werpen) | <strong>Components:</strong> V, S | <strong>Duration:</strong> 10 minuten</p>
+                        <p><strong>Bonus Action:</strong> een flakkerende vlam verschijnt in je hand. Geeft <strong>bright light 20 ft + dim light 20 ft</strong>, geen hitte, geen schade zolang je het vasthoudt. Je kunt de vlam als <strong>Action werpen</strong> (ranged spell attack, +7): <strong>2d8 fire damage</strong> op hit — de spell eindigt dan. Dismiss als Bonus Action.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Een kleine, maar intense vlam danst in Daan's handpalm — warm licht zonder te branden. Als hij het werpt, wordt het een vurige komeet die uiteenspat bij impact. Fire Genasi-magie in zijn puurste vorm.</p>
+                        <p><strong>Tip:</strong> Bonus Action casten = je kunt dezelfde beurt nog een cantrip casten als Action (maar niet Produce Flame werpen). Of cast het, houd het vast voor licht, en werp het later als Action. Korte range (30 ft) — gebruik Fire Bolt voor afstand. Met Elemental Adept: 1's → 2's.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level 1 -->
+            <div class="spell-group" id="group-level1">
+                <div class="spell-card" data-resource="slots1" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Burning Hands</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">3d6 fire</span>
+                            <span class="spell-tag range">Self/15ft cone</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> Self (15-ft Cone) | <strong>Components:</strong> V, S | <strong>Save:</strong> DEX (DC 15/16) | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Elk creature in een <strong>15-ft Cone</strong> maakt een <strong>DEX save</strong>. Bij falen: <strong>3d6 fire damage</strong>. Bij slagen: halve damage. Ontvlambare objecten in het gebied die niet gedragen worden vatten vlam.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan spreidt zijn vingers en een steekvlam schiet vanuit zijn handpalmen naar voren — een kegel van verzengende hitte die alles in zijn pad verschroeit. De lucht trilt en stinkt naar ozon en brandende haren.</p>
+                        <p><strong>Upcast:</strong> +1d6 per slot level boven 1st (2nd: 4d6, 3rd: 5d6). <strong>Elemental Adept:</strong> 1's op dice → 2's, negeert fire resistance. <strong>Careful Spell (1 SP):</strong> tot 4 bondgenoten slagen automatisch en nemen geen damage.</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots1" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Shield</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag action">Reaction</span>
+                            <span class="spell-tag type">Defense</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Reaction | <strong>Trigger:</strong> Je wordt geraakt door een attack roll, of getarget door Magic Missile | <strong>Components:</strong> V, S | <strong>Duration:</strong> 1 ronde</p>
+                        <p>Een onzichtbaar schild van magische kracht verschijnt. Tot het begin van je volgende beurt: <strong>+5 bonus op AC</strong> (AC wordt <strong>22</strong>!), inclusief tegen de aanval die Shield triggerde. Je neemt <strong>geen damage van Magic Missile</strong>. Geen upcast-voordeel.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Op het moment dat het zwaard neerdaalt, flitst een schild van gloeiende runen op rond Daan — alsof zijn drakenschubben even oplichten in een ondoordringbare barrière van vuur en kracht.</p>
+                        <p><strong>Tip:</strong> Daan's belangrijkste overlevingsspell. AC 17 → 22 voor een hele ronde. Kost slechts een 1st-level slot. Alleen Somatic component nodig — geen woorden, maar je hebt wel een vrije hand nodig (of Arcane Focus). Werkt NIET tegen save-based spells (alleen attack rolls).</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots1" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Absorb Elements</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag action">Reaction</span>
+                            <span class="spell-tag type">Defense</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Reaction | <strong>Trigger:</strong> Je neemt acid, cold, fire, lightning of thunder damage | <strong>Components:</strong> S | <strong>Duration:</strong> 1 ronde | <strong>Bron:</strong> Xanathar's Guide (niet in 2024 PHB)</p>
+                        <p>Je vangt een deel van de inkomende energie op. Je hebt <strong>resistance</strong> tegen het triggerende damage type tot het begin van je volgende beurt (halve damage). Bovendien: de eerste keer dat je een <strong>melee attack</strong> hit op je volgende beurt, doet het doelwit extra <strong>1d6 damage</strong> van het getriggerde type.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">De vlammen van de draak slaan tegen Daan aan — maar in plaats van te verbranden absorbeert hij de energie. Zijn vuursteen-kristal pulseert hevig en zijn vuist gloeit op met opgekropte macht, klaar om los te laten op de eerste die te dichtbij komt.</p>
+                        <p><strong>Upcast:</strong> +1d6 extra melee damage per slot level boven 1st. <strong>Let op:</strong> Alleen S-component (stil castbaar!). De melee-bonus is situationeel voor Daan (geen melee fighter), maar de resistance is goud waard tegen dragon breath en elementale aanvallen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level 2 -->
+            <div class="spell-group" id="group-level2">
+                <div class="spell-card" data-resource="slots2" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Scorching Ray</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">3×2d6 fire</span>
+                            <span class="spell-tag range">120 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 120 ft | <strong>Components:</strong> V, S | <strong>Attack:</strong> Ranged spell attack (+7 per straal) | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Je creëert <strong>3 stralen van vuur</strong> en slingert ze naar doelen binnen range. Maak een <strong>aparte ranged spell attack per straal</strong>. Bij hit: <strong>2d6 fire damage per straal</strong>. Stralen kunnen op hetzelfde of verschillende doelen gericht worden. Elke straal is een apart damage-instance (relevant voor concentratie-checks op het target).</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Drie bollen van geconcentreerd vuur vormen zich rond Daan's handen en schieten als geweerkogels af — drie parallelle sporen van vlammen die hun doelen genadeloos opzoeken. De lucht knettert bij elke impact.</p>
+                        <p><strong>Upcast:</strong> +1 extra straal per slot level boven 2nd (3rd: 4 stralen, 4th: 5 stralen). <strong>Innate Sorcery:</strong> Advantage op ALLE drie de attack rolls! <strong>Elemental Adept:</strong> 1's → 2's op elke straal apart. <strong>Empowered Spell (1 SP):</strong> hergooi tot 4 damage dice op één straal.</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots2" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Misty Step</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag action">Bonus Action</span>
+                            <span class="spell-tag range">Self/30 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Bonus Action | <strong>Range:</strong> Self | <strong>Components:</strong> V | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Omgeven door zilveren nevel teleporteer je tot <strong>30 ft</strong> naar een <strong>onbezette plek die je kunt zien</strong>. Geen Concentration. Teleportatie is geen beweging — provokes <strong>geen opportunity attacks</strong>. Eindigt grapples. Alleen Verbal component (geen handen nodig!).</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Een rookpluim wervelt op waar Daan stond — en wanneer het optrekt is hij verdwenen. Dertig voet verderop verschijnt hij uit het niets, grijnzend als een piraat die net van een zinkend schip is gesprongen.</p>
+                        <p><strong>Tip:</strong> Bonus Action = je hebt nog een Action over voor een cantrip (maar geen leveled spell op dezelfde beurt). Werkt terwijl gegrappled. V-only = castbaar met volle handen. Dé nooduitgang samen met Shield.</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots2" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Suggestion</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag range">30 ft</span>
+                            <span class="spell-tag type">Control</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 30 ft | <strong>Components:</strong> V, M (zoete olie + slangetong / focus) | <strong>Save:</strong> WIS (DC 15/16) | <strong>Duration:</strong> Concentration, tot 8 uur</p>
+                        <p>Suggereer een activiteit (max 1-2 zinnen) aan een creature dat je kan horen en begrijpen. Moet <strong>redelijk klinken</strong> — zelfbeschadigende suggesties falen automatisch. Target maakt een <strong>WIS save</strong>. Bij falen: volgt de suggestie zo goed mogelijk voor de duur. Als de activiteit eerder klaar is, eindigt de spell. Damage van jou of bondgenoten beëindigt de spell. Geen herhaalde saves.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">"Weet je, ik denk dat je eigenlijk wilt dat ik je schip leen." Daan's woorden sijpelen in het bewustzijn van het doelwit, zoet als honing en onweerstaanbaar als de warmte van een kampvuur. De suggestie voelt volkomen logisch — totdat de magie uitwerkt.</p>
+                        <p><strong>Let op:</strong> Concentration (8 uur!) — kan niet samen met Haste/Dragon's Breath/etc. Target moet jouw taal begrijpen. Mind Sliver setup: -1d4 op de WIS save! Werkt niet op creatures die je taal niet spreken.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level 3 -->
+            <div class="spell-group" id="group-level3">
+                <div class="spell-card" data-resource="slots3" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Fireball</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">8d6 fire</span>
+                            <span class="spell-tag range">150 ft/20ft r</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 150 ft | <strong>Area:</strong> 20-ft Sphere | <strong>Components:</strong> V, S, M (vleermuismest + zwavel / focus) | <strong>Save:</strong> DEX (DC 15/16) | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Een heldere lichtflits schiet van je vinger naar een punt naar keuze binnen range en ontploft in een laag gebrul van vlammen. Elk creature in een <strong>20-ft-radius Sphere</strong> maakt een <strong>DEX save</strong>. Bij falen: <strong>8d6 fire damage</strong> (gem. 28). Bij slagen: halve damage. Het vuur gaat om hoeken heen. Ontvlambare objecten vatten vlam.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">DÉ spell. Daan's ogen gloeien fel op terwijl hij een kleine bol van gecomprimeerd vuur vormt aan zijn vingertop. Hij laat los. Een streep van licht schiet over het slagveld — en dan ontploft alles. Een zuil van verzengende vlammen stijgt op, de lucht zelf lijkt te brullen, en als het stof neerdaalt is er alleen verschroeide aarde.</p>
+                        <p><strong>Upcast:</strong> +1d6 per slot level boven 3rd. <strong>Elemental Adept:</strong> 1's → 2's (min. 16 dmg op 8d6), negeert fire resistance. <strong>Careful Spell (1 SP):</strong> tot 4 bondgenoten slagen automatisch en nemen GEEN damage. <strong>Empowered Spell (1 SP):</strong> hergooi tot 4 lage dice. <strong>Combo:</strong> Careful + Empowered (2 SP) = maximale schade, bondgenoten veilig.</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots3" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Counterspell</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag action">Reaction</span>
+                            <span class="spell-tag range">60 ft</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Reaction | <strong>Trigger:</strong> Je ziet een creature binnen 60 ft een spell casten | <strong>Components:</strong> S | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Je probeert een spell te onderbreken. Spell van <strong>level 3 of lager</strong>: automatisch geblokkeerd, geen effect. Spell van <strong>level 4+</strong>: maak een <strong>ability check met je spellcasting ability</strong> (d20 + CHA mod = d20+4). DC = <strong>10 + spell level</strong> (bijv. DC 14 voor een 4th-level spell). Bij succes: spell geblokkeerd. De tegenstander verliest zijn spell slot hoe dan ook.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">De vijandelijke magiër begint te chanten — maar Daan maakt een snijdend gebaar door de lucht. De magische energie valt uiteen als vonken in de wind, de spell mislukt, en de frustratie op het gezicht van de vijand is Daan's beloning.</p>
+                        <p><strong>Upcast:</strong> Bij hogere slot: auto-blokkeer spells tot dat slot level (4th-level slot = auto-blokkeer tot level 4). <strong>Tip:</strong> Alleen S-component — stil castbaar! Je kunt Counterspell counteren met een Counterspell (counter-war). Check DC's: level 4 spell = DC 14 (je gooit d20+4, dus 50% kans). Level 5 = DC 15 (45% kans).</p>
+                    </div>
+                </div>
+                <div class="spell-card" data-resource="slots3" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Haste</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag range">30 ft</span>
+                            <span class="spell-tag type">Buff</span>
+                            <span class="spell-tag source-sorc">Sorc</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 30 ft | <strong>Components:</strong> V, S, M (zoethoutwortel / focus) | <strong>Duration:</strong> Concentration, tot 1 minuut</p>
+                        <p>Kies een willing creature in range. Tot de spell eindigt: <strong>(1)</strong> Speed wordt <strong>verdubbeld</strong>. <strong>(2)</strong> <strong>+2 AC</strong>. <strong>(3)</strong> <strong>Advantage op DEX saves</strong>. <strong>(4)</strong> Krijgt een <strong>extra Action</strong> elke beurt — maar ALLEEN voor: Attack (één weapon attack), Dash, Disengage, Hide, of Utilize.</p>
+                        <p><strong style="color: var(--color-danger);">LETHARGY:</strong> Als de spell eindigt (concentratie verloren OF duur afgelopen), kan het target <strong>niet bewegen en geen Actions nemen tot na zijn volgende beurt</strong>. Dit is extreem gevaarlijk in gevecht!</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">De lucht rond het doelwit glanst en vervormt als hitte boven een woestijn. Elke beweging wordt vloeiend, sneller, alsof de tijd zelf buigt. Maar wanneer de magie ophoudt, slaat de uitputting toe als een muur — het lichaam bevriest midden in actie.</p>
+                        <p><strong>Tip:</strong> Cast op je martial party member (Fighter/Paladin) voor maximale waarde. De extra Attack is slechts 1 weapon attack (geen Extra Attack). Bij verlies concentratie is het target een zittende eend — bescherm de caster! Geen upcast-voordeel.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Draconic -->
+            <div class="spell-group" id="group-draconic">
+                <div class="spell-card draconic" data-resource="slots1" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Chromatic Orb</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">3d8 fire</span>
+                            <span class="spell-tag range">90 ft</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 90 ft | <strong>Components:</strong> V, S, M (diamant ter waarde van 50 gp, niet verbruikt) | <strong>Level:</strong> 1st | <strong>Duration:</strong> Instantaneous</p>
+                        <p><strong>Ranged spell attack</strong> (+7). Bij hit: <strong>3d8 damage</strong> van een type naar keuze (Acid/Cold/Fire/Lightning/Poison/Thunder). <strong>Bounce-mechanic (2024):</strong> als je hetzelfde getal gooit op 2+ van de d8's, springt de orb naar een ander creature naar keuze binnen 30 ft — nieuwe attack roll en nieuwe damage roll! De orb kan maar 1x bouncen.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Een bol van puur chromatisch vuur vormt zich in Daan's hand, pulsend in wisselende kleuren. Hij slingert het als een kanonskogel — en bij impact ontploft het in een fontein van vlammen. Soms, als het lot het wil, springt de bol door naar een tweede doelwit als een vurige kanonskogel die ricocheteert.</p>
+                        <p><strong>Upcast:</strong> +1d8 per slot level boven 1st (meer dice = meer kans op bounce!). <strong>Bounce kans bij 3d8:</strong> ~42%. <strong>Let op:</strong> Vereist een 50 gp diamant als component (niet verbruikt, herbruikbaar). Altijd prepared als Draconic spell.</p>
+                    </div>
+                </div>
+                <div class="spell-card draconic" data-resource="slots1" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Command</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag range">60 ft</span>
+                            <span class="spell-tag type">Control</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> 60 ft | <strong>Components:</strong> V | <strong>Save:</strong> WIS (DC 15/16) | <strong>Level:</strong> 1st | <strong>Duration:</strong> Instantaneous</p>
+                        <p>Spreek een <strong>éénwoord-bevel</strong> uit. Target maakt <strong>WIS save</strong> — bij falen voert het het bevel uit op zijn volgende beurt. Geen effect op Undead of creatures die je taal niet begrijpen. Mag niet direct schadelijk zijn. <strong>Standaard bevelen:</strong> <em>Approach</em> (beweeg naar jou), <em>Drop</em> (laat alles vallen), <em>Flee</em> (rent weg), <em>Grovel</em> (val Prone), <em>Halt</em> (beweegt niet, geen Actions/BA's). Geen concentratie!</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">"KNIEL." Daan's stem galmt met bovennatuurlijk gezag, versterkt door drakenbloed-magie. De vijand voelt zijn knieën buigen voordat zijn verstand zich kan verzetten — het bevel is al uitgevoerd voordat hij beseft wat er is gebeurd.</p>
+                        <p><strong>Upcast:</strong> +1 extra target per slot level boven 1st (targets moeten binnen 30 ft van elkaar zijn). <strong>Tip:</strong> "Drop" is geweldig tegen vijanden met machtige wapens. "Grovel" geeft Prone = advantage op melee attacks. Geen concentratie = vrij te combineren met alles. Altijd prepared als Draconic spell.</p>
+                    </div>
+                </div>
+                <div class="spell-card draconic" data-resource="slots2" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Alter Self</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag range">Self</span>
+                            <span class="spell-tag type">Utility</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> Self | <strong>Components:</strong> V, S | <strong>Level:</strong> 2nd | <strong>Duration:</strong> Concentration, tot 1 uur</p>
+                        <p>Kies een van drie opties (wissel als Action tijdens duur): <strong>(1) Aquatic Adaptation:</strong> Kieuwen + zwemsnelheid gelijk aan walksnelheid. <strong>(2) Change Appearance:</strong> Verander je uiterlijk volledig — lengte, gewicht, gezicht, stem, haarkleur. Dit is een <strong>fysieke transformatie</strong>, geen illusie — houdt stand bij fysiek contact en wordt niet gedetecteerd door illusion-detectie. <strong>(3) Natural Weapons:</strong> Klauwen/hoektanden: 1d6 B/P/S + magisch +1 op attack en damage.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan's trekken vervagen en hervormen als was. De gloeiende lijnen op zijn huid doven, de drakenschubben trekken zich terug, en waar net een Fire Genasi piraat stond, staat nu een onopvallende menselijke koopman. Perfect voor een gezochte zeeschuimer.</p>
+                        <p><strong>Tip:</strong> Change Appearance is GOUD voor een gezochte piraat. Fysiek, niet magisch detecteerbaar. Aquatic Adaptation is perfect voor nautische avonturen. Concentration — kan niet samen met Dragon's Breath/Haste. Altijd prepared als Draconic spell.</p>
+                    </div>
+                </div>
+                <div class="spell-card draconic" data-resource="slots2" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Dragon's Breath</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag damage">3d6 fire</span>
+                            <span class="spell-tag range">Touch</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Bonus Action | <strong>Range:</strong> Touch | <strong>Components:</strong> V, S, M (hete peper / focus) | <strong>Level:</strong> 2nd | <strong>Save:</strong> DEX (DC 15/16) | <strong>Duration:</strong> Concentration, tot 1 minuut</p>
+                        <p><strong>Bonus Action:</strong> raak een willing creature aan en geef het de kracht om magische energie te spuwen. Kies damage type (Fire). Het target kan elke beurt zijn <strong>Action</strong> gebruiken om een <strong>15-ft Cone</strong> te ademen: elk creature in de cone maakt een <strong>DEX save</strong> — bij falen <strong>3d6 fire damage</strong>, bij slagen halve damage. Het target kiest zelf wanneer het ademt (optioneel per beurt).</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan legt zijn hand op zijn eigen borst. Diepe warmte verspreidt zich vanuit zijn hart naar zijn longen, zijn keel. Zijn ogen gloeien feller dan ooit. En dan opent hij zijn mond — en een kegel van verzengende vlammen barst los als een echte draak. Elke beurt opnieuw, tot de magie opraakt.</p>
+                        <p><strong>Upcast:</strong> +1d6 per slot level boven 2nd (3rd: 4d6). <strong>Elemental Adept:</strong> 1's → 2's, negeert fire resistance. <strong>Careful Spell (1 SP):</strong> bescherm tot 4 bondgenoten in de cone. <strong>Tip:</strong> BA cast = je kunt op dezelfde beurt meteen ademen als Action. Kan ook op een ally of familiar gecast worden! Concentration — kan niet samen met Haste/Suggestion. Altijd prepared als Draconic spell.</p>
+                    </div>
+                </div>
+                <div class="spell-card draconic" data-resource="slots3" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Fear</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag range">Self/30ft cone</span>
+                            <span class="spell-tag type">Control</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> Self (30-ft Cone) | <strong>Components:</strong> V, S, M (witte veer / focus) | <strong>Save:</strong> WIS (DC 15/16) | <strong>Level:</strong> 3rd | <strong>Duration:</strong> Concentration, tot 1 minuut</p>
+                        <p>Elk creature in een <strong>30-ft Cone</strong> maakt een <strong>WIS save</strong>. Bij falen: laat alles vallen wat het vasthoudt en wordt <strong>Frightened</strong> voor de duur. <strong>Frightened:</strong> Disadvantage op ability checks en attack rolls zolang de bron (jij) in zicht is + kan niet vrijwillig naar jou toe bewegen. Elk beurt <strong>verplicht Dash action</strong> om van jou weg te rennen via de veiligste route. Herhaalde WIS save aan einde van een beurt <strong>alleen als het target geen line of sight naar jou heeft</strong> (om een hoek, achter cover).</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan's drakenbloed kolkt door zijn aderen en hij ontketent een golf van oerterror. Vijanden zien hun ergste nachtmerries — vlammen die hen verslinden, draken die neerstorten. Ze laten hun wapens vallen en vluchten in blinde paniek, schreeuwend en struikelend over elkaar.</p>
+                        <p><strong>Tip:</strong> Targets droppen hun wapens — excellent crowd control! Herhaalde save alleen zonder line of sight = ze moeten EERST een hoek om rennen. Concentration. Geen damage, puur controle. Altijd prepared als Draconic spell. Mind Sliver setup: -1d4 op de WIS save!</p>
+                    </div>
+                </div>
+                <div class="spell-card draconic" data-resource="slots3" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Fly</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag range">Touch</span>
+                            <span class="spell-tag type">Mobility</span>
+                            <span class="spell-tag source-drac">Drac</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> Touch | <strong>Components:</strong> V, S, M (vogelveer / focus) | <strong>Level:</strong> 3rd | <strong>Duration:</strong> Concentration, tot 10 minuten</p>
+                        <p>Raak een willing creature aan. Het target krijgt een <strong>vliegsnelheid van 60 ft</strong> voor de duur. Dit komt bovenop bestaande movement. Het target kan kiezen om te lopen of te vliegen elke beurt. <strong>Als de spell eindigt terwijl het target in de lucht is, valt het!</strong> (1d6 bludgeoning per 10 ft, max 20d6).</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan's drakenschubben gloeien op en vleugels van puur vuur ontvouwen zich van zijn rug — niet fysiek, maar magisch, een aura van hitte die hem de lucht in tilt. Hij stijgt op als een feniks, wind en vlammen wervelend om hem heen.</p>
+                        <p><strong>Upcast:</strong> +1 extra target per slot level boven 3rd (alle targets moeten getouch worden). <strong>Waarschuwing:</strong> Verlies concentratie = iedereen valt! Dit is een van de gevaarlijkste spells om concentratie op te verliezen. Concentration — kan niet samen met Dragon's Breath/Haste. Altijd prepared als Draconic spell. 60 ft fly = 2x Daan's walkspeed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Racial -->
+            <div class="spell-group" id="group-racial">
+                <div class="spell-card racial" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Produce Flame</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">2d8 fire</span>
+                            <span class="spell-tag range">30 ft</span>
+                            <span class="spell-tag source-racial">Racial</span>
+                        </div>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Casting Time:</strong> 1 Bonus Action | <strong>Range:</strong> Self / 30 ft (werpen) | <strong>Components:</strong> V, S | <strong>Duration:</strong> 10 minuten</p>
+                        <p><strong>Fire Genasi Racial Cantrip — altijd beschikbaar, geen slot nodig.</strong> Identiek aan de cantrip-versie: als Bonus Action verschijnt een vlam in je hand. Geeft <strong>bright light 20 ft + dim light 20 ft</strong>. Je kunt de vlam als <strong>Action werpen</strong> (ranged spell attack, +7): <strong>2d8 fire damage</strong>. De spell eindigt na het werpen of na 10 minuten. Dismiss als Bonus Action.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Dit is Daan's geboorterecht — vuur dat simpelweg in zijn hand verschijnt, puur en moeiteloos. Zelfs als al zijn sorcery uitgeput is, kan hij altijd nog vlammen oproepen. Het vuur van de Plane of Fire brandt altijd in hem.</p>
+                        <p><strong>Tip:</strong> Dit is dezelfde spell als je cantrip Produce Flame — je hoeft hem niet apart voor te bereiden. Als Fire Genasi ken je hem automatisch. Bonus Action casten → Action voor iets anders (aanval, Dash, etc.). Met Elemental Adept (Fire): 1's op de damage → 2's.</p>
+                    </div>
+                </div>
+                <div class="spell-card racial" data-resource="racialBH" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Burning Hands (Racial)</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag damage">3d6 fire</span>
+                            <span class="spell-tag type">1/LR Free</span>
+                            <span class="spell-tag source-racial">Racial</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Level 1</strong> | <strong>Casting Time:</strong> 1 Action | <strong>Range:</strong> Self (15-ft cone) | <strong>Components:</strong> V, S | <strong>Duration:</strong> Instantaneous</p>
+                        <p><strong>Fire Genasi Racial — 1× per Long Rest, gratis (geen spell slot nodig).</strong> Je blaast een <strong>15-foot cone</strong> van vuur uit je handen. Elk wezen in de cone maakt een <strong>DEX save (DC 15)</strong>: <strong>3d6 fire damage</strong> op fail, half op success. Ontsteekt brandbare objecten die niet gedragen worden.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Daan spreidt zijn vingers en een golf van vlammen barst los — een cone van puur vuur die de lucht doet trillen. Dit is geen geleerde magie, maar rauwe elementaire kracht die door zijn aderen stroomt. De hitte is intens genoeg om wenkbrauwen te verschroeien op 15 voet afstand.</p>
+                        <p><strong>Tip:</strong> Dit is een GRATIS extra casting bovenop je reguliere spell slots! Je kunt dit 1×/LR casten zonder een slot te gebruiken, EN nog steeds Burning Hands casten met slots. Perfect als opener of als je door je slots heen bent. Met Elemental Adept (Fire): 1's → 2's op de damage dice. Careful Spell (1 SP) kan bondgenoten in de cone beschermen.</p>
+                    </div>
+                </div>
+                <div class="spell-card racial" data-resource="racialFB" onclick="toggleSpell(this)">
+                    <div class="spell-header">
+                        <span class="spell-name">Flame Blade (Racial)</span>
+                        <div class="spell-tags">
+                            <span class="spell-tag conc">C</span>
+                            <span class="spell-tag damage">3d6 fire</span>
+                            <span class="spell-tag type">1/LR Free</span>
+                            <span class="spell-tag source-racial">Racial</span>
+                        </div>
+                        <button class="cast-btn" onclick="castSpell(event, this)">Cast</button>
+                    </div>
+                    <div class="spell-details">
+                        <p><strong>Level 2</strong> | <strong>Casting Time:</strong> 1 Bonus Action | <strong>Range:</strong> Self | <strong>Components:</strong> V, S | <strong>Duration:</strong> Concentration, 10 minuten</p>
+                        <p><strong>Fire Genasi Racial — 1× per Long Rest, gratis (geen spell slot nodig). Concentration.</strong> Een <strong>vlammend zwaard</strong> verschijnt in je vrije hand. Je kunt het gebruiken om <strong>melee spell attacks</strong> te maken (attack roll, +7 to hit): <strong>3d6 fire damage</strong> op hit. Het zwaard geeft <strong>bright light 10 ft + dim light 10 ft</strong>. Als je het laat vallen, verdwijnt het — je kunt het opnieuw oproepen als Bonus Action zolang de spell actief is.</p>
+                        <p style="color: var(--fire-dim); font-style: italic;">Een gebogen cutlass van puur vuur materialiseert in Daan's hand — het perfecte piratenzwaard. Vlammen lekken langs het lemmet als hij het door de lucht zwaait, een spoor van hitte achterlatend. De Fire Genasi-piraat in zijn element, letterlijk.</p>
+                        <p><strong>Tip:</strong> Bonus Action casten → melee spell attack als Action dezelfde beurt. Concentration = geen Haste tegelijk! Dit is een GRATIS extra casting bovenop slots. Goed voor melee-situaties als je verrast wordt. Het zwaard telt niet als een echt wapen (geen Extra Attack, geen Strength mod). Damage is vast 3d6 — schaalt niet met upcasting via racial. Met Elemental Adept (Fire): 1's → 2's.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: GEVECHT ===== -->
+        <div class="tab-panel" id="tab-gevecht">
+            <div class="combat-plan">
+                <h3>Gevechtsplan</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-round">Ronde 0</div>
+                        <div class="timeline-actions">
+                            <div class="action-line">Met <strong>+6 Initiative</strong> ga je bijna altijd eerst.</div>
+                            <div class="action-line">Fireball droppen voordat bondgenoten in de weg staan.</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-round">Ronde 1</div>
+                        <div class="timeline-actions">
+                            <div class="action-line"><span class="action-badge bonus">Bonus</span> Innate Sorcery (DC 16, advantage op attacks)</div>
+                            <div class="action-line"><span class="action-badge action">Action</span> <strong>Fireball</strong> (8d6 fire, 1's→2's met Elemental Adept)</div>
+                            <div class="action-line">→ Met Careful Spell (1 SP): bondgenoten nemen geen schade</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-round">Ronde 2+</div>
+                        <div class="timeline-actions">
+                            <div class="action-line"><span class="action-badge action">Action</span> <strong>Scorching Ray</strong> (3 × 2d6 fire, met advantage van Innate Sorcery)</div>
+                            <div class="action-line">→ Empowered Spell: hergooi tot 4 lage damage dice</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-round">Cantrip-modus</div>
+                        <div class="timeline-actions">
+                            <div class="action-line"><span class="action-badge action">Action</span> <strong>Fire Bolt</strong> (2d10 fire) of <strong>Sorcerous Burst</strong> (2d8 fire + kans op extra d8's)</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-round">Paniek!</div>
+                        <div class="timeline-actions">
+                            <div class="action-line"><span class="action-badge reaction">Reaction</span> <strong>Shield</strong> (AC wordt 22!)</div>
+                            <div class="action-line"><span class="action-badge bonus">Bonus</span> <strong>Misty Step</strong> (teleport 30 ft in een rookpluim)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-title">Signature Combo's</h3>
+            <div class="combo-grid">
+                <div class="combo-card">
+                    <div class="combo-name">"Alles Moet Branden"</div>
+                    <div class="combo-desc">Fireball + Careful Spell + Empowered Spell (2 SP) = Verwoestende vuurregen, bondgenoten veilig</div>
+                </div>
+                <div class="combo-card">
+                    <div class="combo-name">"De Setup"</div>
+                    <div class="combo-desc">Ronde 1: Mind Sliver (cantrip, -1d4 op volgende save) → Ronde 2: Fireball (lagere save = meer schade)</div>
+                </div>
+                <div class="combo-card">
+                    <div class="combo-name">"Machinegeweer"</div>
+                    <div class="combo-desc">Innate Sorcery + Scorching Ray = 3 stralen met advantage, elk 2d6 fire</div>
+                </div>
+                <div class="combo-card">
+                    <div class="combo-name">"Drakenadem"</div>
+                    <div class="combo-desc">Dragon's Breath op jezelf (concentratie) = elke beurt 15-ft cone 3d6 fire als actie</div>
+                </div>
+                <div class="combo-card">
+                    <div class="combo-name">"Nooduitgang"</div>
+                    <div class="combo-desc">Shield (reactie → AC 22) + volgende beurt Misty Step (bonus action, weg in een rookpluim)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: KLASSE & RAS ===== -->
+        <div class="tab-panel" id="tab-klasse">
+            <h3 class="section-title" style="margin-top:0">Class Features</h3>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Innate Sorcery</span>
+                        <span class="feature-level">Level 1</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p><strong>Bonus Action</strong>, duurt 1 minuut, <strong>2× per Long Rest</strong>:</p>
+                    <ul>
+                        <li>Spell Save DC <strong>+1</strong> (wordt 16)</li>
+                        <li><strong>Advantage</strong> op spell attack rolls van Sorcerer spells</li>
+                    </ul>
+                    <button class="feature-use-btn innate-sorcery-btn" onclick="activateInnateSorcery(event)" style="margin-top:8px;">Aktiveer Innate Sorcery</button>
+                    <p style="margin-top:6px; color: var(--fire-primary); font-style: italic;">Kost 1 Innate Use. Zet automatisch DC en Spell Attack aan.</p>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Font of Magic</span>
+                        <span class="feature-level">Level 2</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p><strong>5 Sorcery Points</strong> op level 5 (herstelt na Long Rest).</p>
+                    <ul>
+                        <li><strong>Slot → SP:</strong> Gratis actie. 1 slot = slot-level aan SP</li>
+                        <li><strong>SP → Slot:</strong> Bonus Action. 2 SP = 1st, 3 SP = 2nd, 5 SP = 3rd</li>
+                    </ul>
+                    <div class="fom-buttons">
+                        <button class="feature-use-btn fom-slot-to-sp" data-slot-key="slots1" onclick="convertSlotToSP(event, 'slots1', 1)">1st → 1 SP</button>
+                        <button class="feature-use-btn fom-slot-to-sp" data-slot-key="slots2" onclick="convertSlotToSP(event, 'slots2', 2)">2nd → 2 SP</button>
+                        <button class="feature-use-btn fom-slot-to-sp" data-slot-key="slots3" onclick="convertSlotToSP(event, 'slots3', 3)">3rd → 3 SP</button>
+                        <button class="feature-use-btn fom-sp-to-slot" data-sp-cost="2" data-slot-key="slots1" onclick="convertSPToSlot(event, 2, 'slots1')">2 SP → 1st</button>
+                        <button class="feature-use-btn fom-sp-to-slot" data-sp-cost="3" data-slot-key="slots2" onclick="convertSPToSlot(event, 3, 'slots2')">3 SP → 2nd</button>
+                        <button class="feature-use-btn fom-sp-to-slot" data-sp-cost="5" data-slot-key="slots3" onclick="convertSPToSlot(event, 5, 'slots3')">5 SP → 3rd</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Metamagic</span>
+                        <span class="feature-level">Level 2</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <ul>
+                        <li><strong>Careful Spell (1 SP):</strong> Bescherm tot 4 bondgenoten tegen AoE — slagen automatisch, geen halve schade</li>
+                        <li><strong>Empowered Spell (1 SP):</strong> Hergooi tot 4 damage dice. Combineerbaar met andere Metamagic!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Draconic Resilience</span>
+                        <span class="feature-level">Level 3</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <ul>
+                        <li><strong>Extra HP:</strong> +3 op level 3, +1 per Sorcerer level daarna (totaal +5)</li>
+                        <li><strong>AC = 10 + DEX mod + CHA mod = 17</strong> (zonder armor)</li>
+                        <li>Rode drakenschubben verschijnen op je huid</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Draconic Spells</span>
+                        <span class="feature-level">Level 3</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p>Altijd prepared, tellen <strong>niet</strong> mee tegen je prepared spell limit (9).</p>
+                    <ul>
+                        <li><strong>Level 3:</strong> Chromatic Orb, Command, Alter Self, Dragon's Breath</li>
+                        <li><strong>Level 5:</strong> Fear, Fly</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div>
+                        <span class="feature-name">Sorcerous Restoration</span>
+                        <span class="feature-level">Level 5</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p>Na een <strong>Short Rest</strong>: herwin tot <strong>2 Sorcery Points</strong> (1× per Long Rest).</p>
+                    <p style="margin-top:6px; font-style: italic; color: var(--text-muted);">Getrackt via de Short Rest knop in de footer.</p>
+                </div>
+            </div>
+
+            <h3 class="section-title">Racial Features (Fire Genasi)</h3>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div><span class="feature-name">Darkvision</span></div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p>60 ft. Darkvision — je ziet in het donker als schemerlicht.</p>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div><span class="feature-name">Fire Resistance</span></div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p>Resistentie tegen fire damage (halve schade). Beschermt Daan tegen zijn eigen ongelukken!</p>
+                </div>
+            </div>
+
+            <div class="feature-card" onclick="toggleFeature(this)">
+                <div class="feature-header">
+                    <div><span class="feature-name">Reach to the Blaze</span></div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <ul>
+                        <li><strong>Produce Flame:</strong> Cantrip (altijd)</li>
+                        <li><strong>Burning Hands:</strong> 1/Long Rest, gratis (vanaf level 3)</li>
+                        <li><strong>Flame Blade:</strong> 1/Long Rest, gratis (vanaf level 5)</li>
+                    </ul>
+                    <p style="margin-top:4px;">Spellcasting ability: Charisma</p>
+                </div>
+            </div>
+
+            <h3 class="section-title">Toekomst (Level 6)</h3>
+            <div class="feature-card" style="opacity: 0.6; border-left-color: var(--text-muted);">
+                <div class="feature-header" onclick="toggleFeature(this.parentElement)" style="cursor:pointer">
+                    <div>
+                        <span class="feature-name">Elemental Affinity (nog niet!)</span>
+                        <span class="feature-level">Level 6</span>
+                    </div>
+                    <span class="feature-chevron">&#9654;</span>
+                </div>
+                <div class="feature-body">
+                    <p>Op level 6 kies je Fire:</p>
+                    <ul>
+                        <li>Fire Resistance (stapelt niet met racial)</li>
+                        <li><strong>+CHA mod (+4) extra fire damage</strong> op één damage roll per spell!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: STATS ===== -->
+        <div class="tab-panel active" id="tab-stats">
+            <h3 class="section-title" style="margin-top:0">Ability Scores</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Strength</td><td>8</td><td>-1</td><td>-1</td></tr>
+                    <tr><td>Dexterity</td><td>16</td><td>+3</td><td>+3</td></tr>
+                    <tr class="prof-row"><td>Constitution</td><td>15</td><td>+2</td><td>+5 ★</td></tr>
+                    <tr><td>Intelligence</td><td>8</td><td>-1</td><td>-1</td></tr>
+                    <tr><td>Wisdom</td><td>8</td><td>-1</td><td>-1</td></tr>
+                    <tr class="prof-row"><td>Charisma</td><td>18</td><td>+4</td><td>+7 ★</td></tr>
+                </tbody>
+            </table>
+
+            <h3 class="section-title">Skills</h3>
+            <div class="skills-grid">
+                <div class="skills-column">
+                    <div class="skills-group-label">Strength</div>
+                    <div class="skills-list">
+                        <div class="skill-row"><span class="skill-row-name">Athletics</span><span class="skill-row-val">-1</span></div>
+                    </div>
+                    <div class="skills-group-label">Dexterity</div>
+                    <div class="skills-list">
+                        <div class="skill-row prof"><span class="skill-row-name">Acrobatics ★</span><span class="skill-row-val">+6</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Sleight of Hand</span><span class="skill-row-val">+3</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Stealth</span><span class="skill-row-val">+3</span></div>
+                    </div>
+                </div>
+                <div class="skills-column">
+                    <div class="skills-group-label">Intelligence</div>
+                    <div class="skills-list">
+                        <div class="skill-row"><span class="skill-row-name">Arcana</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">History</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Investigation</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Nature</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Religion</span><span class="skill-row-val">-1</span></div>
+                    </div>
+                </div>
+                <div class="skills-column">
+                    <div class="skills-group-label">Wisdom</div>
+                    <div class="skills-list">
+                        <div class="skill-row"><span class="skill-row-name">Animal Handling</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Insight</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Medicine</span><span class="skill-row-val">-1</span></div>
+                        <div class="skill-row prof"><span class="skill-row-name">Perception ★</span><span class="skill-row-val">+2</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Survival</span><span class="skill-row-val">-1</span></div>
+                    </div>
+                    <div class="skills-group-label">Charisma</div>
+                    <div class="skills-list">
+                        <div class="skill-row prof"><span class="skill-row-name">Deception ★</span><span class="skill-row-val">+7</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Intimidation</span><span class="skill-row-val">+4</span></div>
+                        <div class="skill-row"><span class="skill-row-name">Performance</span><span class="skill-row-val">+4</span></div>
+                        <div class="skill-row prof"><span class="skill-row-name">Persuasion ★</span><span class="skill-row-val">+7</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-title">Proficiencies</h3>
+            <div class="prof-list">
+                <div class="prof-item"><span class="prof-label">Tools</span><span>Navigator's Tools</span></div>
+                <div class="prof-item"><span class="prof-label">Vehicles</span><span>Water Vehicles</span></div>
+                <div class="prof-item"><span class="prof-label">Languages</span><span>Common, Primordial</span></div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: INFO ===== -->
+        <div class="tab-panel" id="tab-info">
+            <div class="info-section">
+                <h3>Basis Info</h3>
+                <dl class="info-grid">
+                    <dt>Naam</dt><dd>Daan de Pyromaan</dd>
+                    <dt>Klasse</dt><dd>Sorcerer 5 (Draconic Sorcery — Rode Draak)</dd>
+                    <dt>Ras</dt><dd>Fire Genasi (Monsters of the Multiverse)</dd>
+                    <dt>Achtergrond</dt><dd>Custom "Piraat" (Sailor-gebaseerd, 2024 regels)</dd>
+                    <dt>Alignment</dt><dd>Chaotic Neutral</dd>
+                    <dt>Ervaring</dt><dd>6.500 XP (Level 5)</dd>
+                </dl>
+            </div>
+
+            <div class="info-section">
+                <h3>Persoonlijkheid</h3>
+                <div class="personality-item">
+                    <div class="p-label">Personality Trait</div>
+                    <div class="p-text">Ik speel altijd met vuur. Letterlijk. Er dansen altijd vlammetjes tussen mijn vingers.</div>
+                </div>
+                <div class="personality-item">
+                    <div class="p-label">Ideaal</div>
+                    <div class="p-text">Vrijheid — De zee en het vuur kennen geen regels, en ik ook niet.</div>
+                </div>
+                <div class="personality-item">
+                    <div class="p-label">Bond</div>
+                    <div class="p-text">Ik wil een nieuw schip. Een BETER schip. Eentje van ijzer of steen.</div>
+                </div>
+                <div class="personality-item">
+                    <div class="p-label">Flaw</div>
+                    <div class="p-text">"Zal ik het in de fik steken?" is mijn antwoord op de meeste problemen.</div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Backstory</h3>
+                <div class="backstory-text">
+                    <p>Daan de Pyromaan was ooit kapitein van de <em>Vurige Zalm</em>, een piratenschip dat de kusten van de Sword Coast onveilig maakte. "Was" is het sleutelwoord — want de <em>Vurige Zalm</em> bestaat niet meer.</p>
+                    <p>Het probleem met Daan is niet dat hij geen goede kapitein was. Hij kende de zeeroutes, kon een schip commanderen in een storm, en zijn bemanning vreesde en respecteerde hem — want als je kapitein letterlijk vuur kan spuwen, denk je twee keer na voor je muiterij pleegt. Het probleem is dat Daan een Fire Genasi is met drakenbloed in zijn aderen en de zelfbeheersing van een lucifer in een hooiberg.</p>
+                    <p>Het begon klein. Een kaars hier, een lantaarn daar, af en toe een stel vlammen die "per ongeluk" uit zijn handen schoten wanneer hij enthousiast werd. De bemanning leerde ermee te leven. Emmer water naast de kapitein, dat was gewoon standaardprocedure op de <em>Vurige Zalm</em>.</p>
+                    <p>Tot die ene nacht. Daan had gedronken. Er was een mot. De mot vloog rond de scheepslantaarn. Daan vond dat de mot <em>irritant</em> was. Wat volgde was — in Daan's eigen woorden — "een volkomen proportionele reactie op een vliegend insect."</p>
+                    <p>De <em>Vurige Zalm</em> zonk in drie minuten. De bemanning overleefde het, maar vertrok onmiddellijk en collectief naar andere werkgevers. Daan stond op de kade, smeulend, en keek toe hoe de resten van zijn schip borrelden en sisten in het havenwater.</p>
+                    <p>Sindsdien zwerft Daan langs de kusten, op zoek naar een nieuw schip. Hij heeft een prijs op zijn hoofd van de koopliedengildes. Hij laat overal een spoor van schroeiplekken, verschroeide deurposten en nerveuze herbergiers achter.</p>
+                    <p>Hij is niet kwaadaardig. Hij is niet eens onaardig. Hij is gewoon... brandbaar. En hij vindt dat jij dat ook zou moeten zijn.</p>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Uiterlijk</h3>
+                <div class="backstory-text">
+                    <p>Daan is slank en van gemiddelde lengte, met de rusteloze energie van iemand die altijd ergens naartoe onderweg is — of ergens vandaan wegrent. Zijn huid heeft de kleur van gloeiende kooltjes: donker rossig-bruin met hier en daar oranje schemerlijnen die langzaam onder zijn huid bewegen. Op zijn armen en schouders glinsteren fijne, rode drakenschubben.</p>
+                    <p>Zijn haar is een ramp. Smeulende, warrige lokken in alle tinten rood en oranje, waaruit bij vlagen kleine rookpluimpjes opstijgen. Soms dansen er vlammetjes aan de punten.</p>
+                    <p>Zijn ogen zijn felgeel-oranje en gloeien heller wanneer hij magie gebruikt — of wanneer hij iets ziet dat hij graag in de fik zou steken.</p>
+                    <p>Zijn piratenjas is een patchwork van brandgaten en roetstrepen. Aan een leren koord om zijn nek hangt een stuk vuursteen-kristal. Hij ruikt altijd naar kampvuurrook.</p>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>Equipment</h3>
+                <table class="equipment-table">
+                    <thead>
+                        <tr><th>Item</th><th>Opmerking</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Speer</td><td>Nooit gebruikt, punt is gesmolten</td></tr>
+                        <tr><td>2 Dolken</td><td>Een verschroeid, een nog bruikbaar</td></tr>
+                        <tr><td>Arcane Focus (vuursteen-kristal)</td><td>Gloeit constant, hangt om zijn nek</td></tr>
+                        <tr><td>Dungeoneer's Pack</td><td>Half verschroeid</td></tr>
+                        <tr><td>Piratenjas</td><td>Ooit mooi, nu vol brandgaten</td></tr>
+                        <tr><td>Navigator's Tools</td><td>Geschroeid maar functioneel</td></tr>
+                        <tr><td>Touw (50 ft.)</td><td>Een uiteinde verschroeid</td></tr>
+                        <tr><td>Reiskleding</td><td>Permanent rooklucht</td></tr>
+                        <tr><td>Verkoold kompas</td><td>Sentimentele waarde</td></tr>
+                        <tr><td>Restgeld</td><td>~20 GP</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-section">
+                <h3>DM Notities</h3>
+                <ul class="dm-notes">
+                    <li>Daan steekt constant dingen aan, bewust of onbewust</li>
+                    <li>Hij is gezocht door koopliedengildes en havenautoriteiten</li>
+                    <li>Zijn droom: een nieuw schip van metaal of steen</li>
+                    <li><strong>WIS save -1</strong> = extreem vatbaar voor charm, fear, illusions → hilarische situaties</li>
+                    <li><strong>INT -1</strong> = denkt niet na over consequenties</li>
+                    <li><strong>Fire Resistance</strong> (racial) = beschermt hem tegen zijn eigen ongelukken</li>
+                    <li>Op <strong>level 6</strong> krijgt hij Elemental Affinity (Fire): +4 fire damage op spells</li>
+                    <li>Check met DM of <strong>Control Flames</strong> beschikbaar is als cantrip</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="resource-group">
+            <span class="resource-label">SP</span>
+            <div class="resource-dots" id="sp-dots"></div>
+        </div>
+        <div class="resource-separator"></div>
+        <div class="resource-group">
+            <span class="resource-label">1st</span>
+            <div class="resource-dots" id="slot1-dots"></div>
+        </div>
+        <div class="resource-group">
+            <span class="resource-label">2nd</span>
+            <div class="resource-dots" id="slot2-dots"></div>
+        </div>
+        <div class="resource-group">
+            <span class="resource-label">3rd</span>
+            <div class="resource-dots" id="slot3-dots"></div>
+        </div>
+        <div class="resource-separator"></div>
+        <div class="resource-group">
+            <span class="resource-label">Innate</span>
+            <div class="resource-dots" id="innate-dots"></div>
+        </div>
+        <div class="resource-separator"></div>
+        <div class="resource-group">
+            <span class="resource-label">BH</span>
+            <div class="resource-dots" id="racial-bh-dots"></div>
+        </div>
+        <div class="resource-group">
+            <span class="resource-label">FB</span>
+            <div class="resource-dots" id="racial-fb-dots"></div>
+        </div>
+        <div class="resource-separator"></div>
+        <div class="resource-group">
+            <span class="resource-label">HD</span>
+            <div class="resource-dots" id="hd-dots"></div>
+        </div>
+        <div class="rest-buttons">
+            <button class="rest-btn" onclick="shortRest()" title="Short Rest: herwin hit dice + 2 SP (Sorcerous Restoration, 1/LR)">Short Rest</button>
+            <button class="rest-btn long" onclick="longRest()" title="Long Rest: reset alles">Long Rest</button>
+        </div>
+    </footer>
+</div>
+
+<script>
+// ========================================
+// State Management
+// ========================================
+const STORAGE_KEY = 'daan-pyromaan-state';
+const MAX_HP = 37;
+
+const defaultState = {
+    hp: MAX_HP,
+    tempHP: 0,
+    shieldActive: false,
+    innateSorceryActive: false,
+    sorceryPoints: [true, true, true, true, true],
+    slots1: [true, true, true, true],
+    slots2: [true, true, true],
+    slots3: [true, true],
+    innateUses: [true, true],
+    racialBH: [true],
+    racialFB: [true],
+    hitDice: [true, true, true, true, true],
+    sorcRestorationUsed: false,
+};
+
+let state = loadState();
+
+function loadState() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Merge with defaults for any missing keys
+            return { ...defaultState, ...parsed };
+        }
+    } catch (e) { /* ignore */ }
+    return { ...defaultState };
+}
+
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* ignore */ }
+}
+
+// ========================================
+// HP System
+// ========================================
+const hpBadge = document.getElementById('hp-badge');
+const hpControls = document.getElementById('hp-controls');
+const hpCurrentEl = document.getElementById('hp-current');
+const hpTempEl = document.getElementById('hp-temp');
+const hpBar = document.getElementById('hp-bar');
+const hpInput = document.getElementById('hp-input');
+
+hpBadge.addEventListener('click', (e) => {
+    if (e.target.closest('.hp-controls') || e.target.closest('.hp-btn')) return;
+    hpControls.classList.toggle('show');
+});
+
+function updateHPDisplay() {
+    const hp = state.hp;
+    const pct = Math.max(0, (hp / MAX_HP) * 100);
+    hpCurrentEl.textContent = hp;
+    hpBar.style.width = pct + '%';
+
+    let color;
+    if (pct > 75) color = 'var(--hp-healthy)';
+    else if (pct > 50) color = 'var(--hp-injured)';
+    else if (pct > 25) color = 'var(--hp-wounded)';
+    else if (pct > 0) color = 'var(--hp-critical)';
+    else color = 'var(--hp-dead)';
+    hpBar.style.background = color;
+
+    hpCurrentEl.style.color = color;
+    hpTempEl.textContent = state.tempHP > 0 ? `+${state.tempHP} temp` : '';
+    saveState();
+}
+
+function changeHP(direction) {
+    const amount = parseInt(hpInput.value) || 1;
+    if (direction > 0) {
+        // Healing
+        state.hp = Math.min(MAX_HP, state.hp + amount);
+    } else {
+        // Damage — temp HP absorbs first
+        let dmg = amount;
+        if (state.tempHP > 0) {
+            if (state.tempHP >= dmg) {
+                state.tempHP -= dmg;
+                dmg = 0;
+            } else {
+                dmg -= state.tempHP;
+                state.tempHP = 0;
+            }
+        }
+        state.hp = Math.max(0, state.hp - dmg);
+    }
+    updateHPDisplay();
+}
+
+function addTempHP() {
+    const amount = parseInt(hpInput.value) || 0;
+    // Temp HP doesn't stack, take highest
+    state.tempHP = Math.max(state.tempHP, amount);
+    updateHPDisplay();
+}
+
+// ========================================
+// AC Shield Toggle
+// ========================================
+function toggleShield() {
+    state.shieldActive = !state.shieldActive;
+    const badge = document.getElementById('ac-badge');
+    const val = document.getElementById('ac-value');
+    if (state.shieldActive) {
+        val.textContent = '22';
+        badge.classList.add('active');
+    } else {
+        val.textContent = '17';
+        badge.classList.remove('active');
+    }
+    saveState();
+}
+
+// ========================================
+// DC / Innate Sorcery Toggle
+// ========================================
+function toggleInnateSorcery() {
+    state.innateSorceryActive = !state.innateSorceryActive;
+    const dcBadge = document.getElementById('dc-badge');
+    const dcVal = document.getElementById('dc-value');
+    const spaBadge = document.getElementById('spa-badge');
+    const spaVal = document.getElementById('spa-value');
+    if (state.innateSorceryActive) {
+        dcVal.textContent = '16';
+        dcBadge.classList.add('active');
+        spaVal.textContent = '+7 Adv';
+        spaBadge.classList.add('active');
+    } else {
+        dcVal.textContent = '15';
+        dcBadge.classList.remove('active');
+        spaVal.textContent = '+7';
+        spaBadge.classList.remove('active');
+    }
+    saveState();
+}
+
+// ========================================
+// Tab System
+// ========================================
+document.querySelectorAll('.main-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+// Spell sub-tabs
+document.querySelectorAll('.spell-sub-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.spell-sub-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.spell-group').forEach(g => g.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('group-' + btn.dataset.group).classList.add('active');
+    });
+});
+
+// ========================================
+// Metamagic badges (click to toggle tooltip)
+// ========================================
+function toggleMetamagic(badge) {
+    const wasOpen = badge.classList.contains('open');
+    // Close all open metamagic tooltips first
+    document.querySelectorAll('.metamagic-badge.open').forEach(b => b.classList.remove('open'));
+    // Toggle the clicked one
+    if (!wasOpen) badge.classList.add('open');
+}
+// Close metamagic tooltips when clicking elsewhere
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.metamagic-badge')) {
+        document.querySelectorAll('.metamagic-badge.open').forEach(b => b.classList.remove('open'));
+    }
+});
+
+// Spell Cards (accordion)
+// ========================================
+function toggleSpell(card) {
+    card.classList.toggle('expanded');
+}
+
+// Feature Cards (accordion)
+function toggleFeature(card) {
+    // If called from the onclick on the level-6 card header, card is correct
+    if (!card.classList.contains('feature-card')) {
+        card = card.closest('.feature-card');
+    }
+    if (card) card.classList.toggle('expanded');
+}
+
+// ========================================
+// Resource Dots
+// ========================================
+function createDots(containerId, stateKey, cssClass, count) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot ' + cssClass;
+        if (state[stateKey][i]) dot.classList.add('filled');
+        dot.addEventListener('click', () => {
+            state[stateKey][i] = !state[stateKey][i];
+            dot.classList.toggle('filled');
+            saveState();
+        });
+        container.appendChild(dot);
+    }
+}
+
+function renderAllDots() {
+    createDots('sp-dots', 'sorceryPoints', '', 5);
+    createDots('slot1-dots', 'slots1', 'slot-1', 4);
+    createDots('slot2-dots', 'slots2', 'slot-2', 3);
+    createDots('slot3-dots', 'slots3', 'slot-3', 2);
+    createDots('innate-dots', 'innateUses', 'innate', 2);
+    createDots('racial-bh-dots', 'racialBH', 'racial-dot', 1);
+    createDots('racial-fb-dots', 'racialFB', 'racial-dot', 1);
+    createDots('hd-dots', 'hitDice', 'hd', 5);
+    updateCastButtons();
+}
+
+// ========================================
+// Rest Buttons
+// ========================================
+function shortRest() {
+    // Sorcerous Restoration: regain up to 2 SP (1/LR)
+    if (!state.sorcRestorationUsed) {
+        let restored = 0;
+        for (let i = 0; i < state.sorceryPoints.length && restored < 2; i++) {
+            if (!state.sorceryPoints[i]) {
+                state.sorceryPoints[i] = true;
+                restored++;
+            }
+        }
+        state.sorcRestorationUsed = true;
+    }
+    // Hit dice: player can spend hit dice during short rest
+    // For simplicity, we don't auto-spend them; they're tracked manually
+    saveState();
+    renderAllDots();
+    updateToggles();
+}
+
+function longRest() {
+    state.hp = MAX_HP;
+    state.tempHP = 0;
+    state.sorceryPoints = [true, true, true, true, true];
+    state.slots1 = [true, true, true, true];
+    state.slots2 = [true, true, true];
+    state.slots3 = [true, true];
+    state.innateUses = [true, true];
+    state.racialBH = [true];
+    state.racialFB = [true];
+    state.sorcRestorationUsed = false;
+    // Regain half hit dice (round down), minimum 1 = 2 dice at level 5
+    let regained = 0;
+    for (let i = 0; i < state.hitDice.length && regained < 2; i++) {
+        if (!state.hitDice[i]) {
+            state.hitDice[i] = true;
+            regained++;
+        }
+    }
+    state.shieldActive = false;
+    state.innateSorceryActive = false;
+    saveState();
+    renderAllDots();
+    updateHPDisplay();
+    updateToggles();
+}
+
+// ========================================
+// Restore toggles from state
+// ========================================
+function updateToggles() {
+    // Shield
+    const acBadge = document.getElementById('ac-badge');
+    const acVal = document.getElementById('ac-value');
+    if (state.shieldActive) {
+        acVal.textContent = '22';
+        acBadge.classList.add('active');
+    } else {
+        acVal.textContent = '17';
+        acBadge.classList.remove('active');
+    }
+    // Innate Sorcery
+    const dcBadge = document.getElementById('dc-badge');
+    const dcVal = document.getElementById('dc-value');
+    const spaBadge = document.getElementById('spa-badge');
+    const spaVal = document.getElementById('spa-value');
+    if (state.innateSorceryActive) {
+        dcVal.textContent = '16';
+        dcBadge.classList.add('active');
+        spaVal.textContent = '+7 Adv';
+        spaBadge.classList.add('active');
+    } else {
+        dcVal.textContent = '15';
+        dcBadge.classList.remove('active');
+        spaVal.textContent = '+7';
+        spaBadge.classList.remove('active');
+    }
+}
+
+// ========================================
+// Resource Linking: Cast / Use System
+// ========================================
+function isResourceEmpty(stateKey) {
+    const arr = state[stateKey];
+    if (!arr) return true;
+    return arr.every(v => !v);
+}
+
+function isResourceFull(stateKey) {
+    const arr = state[stateKey];
+    if (!arr) return false;
+    return arr.every(v => v);
+}
+
+function resourceCount(stateKey) {
+    const arr = state[stateKey];
+    if (!arr) return 0;
+    return arr.filter(v => v).length;
+}
+
+function useResource(stateKey) {
+    const arr = state[stateKey];
+    if (!arr) return false;
+    for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i]) {
+            arr[i] = false;
+            renderAllDots();
+            saveState();
+            return true;
+        }
+    }
+    return false;
+}
+
+function flashButton(btn, success) {
+    btn.classList.remove('flash', 'fail');
+    void btn.offsetWidth;
+    if (success) {
+        const origText = btn.textContent;
+        btn.textContent = 'OK!';
+        btn.classList.add('flash');
+        setTimeout(() => { btn.textContent = origText; btn.classList.remove('flash'); }, 600);
+    } else {
+        const origText = btn.textContent;
+        btn.textContent = 'Op!';
+        btn.classList.add('fail');
+        setTimeout(() => { btn.textContent = origText; btn.classList.remove('fail'); }, 400);
+    }
+}
+
+function castSpell(event, button) {
+    event.stopPropagation();
+    const card = button.closest('.spell-card');
+    const resource = card.dataset.resource;
+    if (!resource || resource === 'none') return;
+    if (button.classList.contains('disabled')) {
+        flashButton(button, false);
+        return;
+    }
+    if (useResource(resource)) {
+        flashButton(button, true);
+    } else {
+        flashButton(button, false);
+    }
+}
+
+function useMetamagic(event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    if (btn.classList.contains('disabled')) {
+        flashButton(btn, false);
+        return;
+    }
+    if (useResource('sorceryPoints')) {
+        flashButton(btn, true);
+    } else {
+        flashButton(btn, false);
+    }
+}
+
+function activateInnateSorcery(event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    if (btn.classList.contains('disabled')) {
+        flashButton(btn, false);
+        return;
+    }
+    if (useResource('innateUses')) {
+        flashButton(btn, true);
+        if (!state.innateSorceryActive) {
+            toggleInnateSorcery();
+        }
+    } else {
+        flashButton(btn, false);
+    }
+}
+
+function convertSlotToSP(event, slotKey, spGain) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    if (btn.classList.contains('disabled')) return;
+    if (isResourceEmpty(slotKey) || isResourceFull('sorceryPoints')) return;
+    const arr = state[slotKey];
+    for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i]) { arr[i] = false; break; }
+    }
+    let gained = 0;
+    for (let i = 0; i < state.sorceryPoints.length && gained < spGain; i++) {
+        if (!state.sorceryPoints[i]) { state.sorceryPoints[i] = true; gained++; }
+    }
+    renderAllDots();
+    saveState();
+    flashButton(btn, true);
+}
+
+function convertSPToSlot(event, spCost, slotKey) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    if (btn.classList.contains('disabled')) return;
+    if (resourceCount('sorceryPoints') < spCost || isResourceFull(slotKey)) return;
+    let spent = 0;
+    for (let i = state.sorceryPoints.length - 1; i >= 0 && spent < spCost; i--) {
+        if (state.sorceryPoints[i]) { state.sorceryPoints[i] = false; spent++; }
+    }
+    for (let i = 0; i < state[slotKey].length; i++) {
+        if (!state[slotKey][i]) { state[slotKey][i] = true; break; }
+    }
+    renderAllDots();
+    saveState();
+    flashButton(btn, true);
+}
+
+function updateCastButtons() {
+    document.querySelectorAll('.spell-card[data-resource] .cast-btn').forEach(btn => {
+        const resource = btn.closest('.spell-card').dataset.resource;
+        if (resource && resource !== 'none') {
+            btn.classList.toggle('disabled', isResourceEmpty(resource));
+        }
+    });
+    document.querySelectorAll('.metamagic-use-btn').forEach(btn => {
+        btn.classList.toggle('disabled', isResourceEmpty('sorceryPoints'));
+    });
+    document.querySelectorAll('.innate-sorcery-btn').forEach(btn => {
+        btn.classList.toggle('disabled', isResourceEmpty('innateUses'));
+    });
+    document.querySelectorAll('.fom-slot-to-sp').forEach(btn => {
+        const slotKey = btn.dataset.slotKey;
+        btn.classList.toggle('disabled', isResourceEmpty(slotKey) || isResourceFull('sorceryPoints'));
+    });
+    document.querySelectorAll('.fom-sp-to-slot').forEach(btn => {
+        const spCost = parseInt(btn.dataset.spCost);
+        const slotKey = btn.dataset.slotKey;
+        btn.classList.toggle('disabled', resourceCount('sorceryPoints') < spCost || isResourceFull(slotKey));
+    });
+}
+
+// ========================================
+// Init
+// ========================================
+renderAllDots();
+updateHPDisplay();
+updateToggles();
+</script>
+</body>
+</html>
